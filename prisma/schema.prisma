@@ -8,3 +8,215 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Barbershop {
+  id          String   @id @default(uuid())
+  name        String
+  document    String?  // CNPJ or CPF
+  phone       String?
+  address     String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  users        User[]
+  customers    Customer[]
+  services     Service[]
+  appointments Appointment[]
+  products     Product[]
+  sales        ProductSale[]
+  transactions FinancialTransaction[]
+  schedules    WorkSchedule[]
+  blockedTimes BlockedTime[]
+  settings     Settings?
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  BARBER
+  RECEPTIONIST
+}
+
+model User {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  name         String
+  email        String     @unique
+  password     String
+  role         Role       @default(BARBER)
+  phone        String?
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  appointments Appointment[]
+  schedules    WorkSchedule[]
+  blockedTimes BlockedTime[]
+}
+
+model Customer {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  name         String
+  email        String?
+  phone        String
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  appointments Appointment[]
+  purchases    ProductSale[]
+}
+
+model Service {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  name         String
+  description  String?
+  price        Decimal    @db.Decimal(10, 2)
+  duration     Int        // Duration in minutes
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  appointments Appointment[]
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+model Appointment {
+  id           String            @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop        @relation(fields: [barbershopId], references: [id])
+  customerId   String
+  customer     Customer          @relation(fields: [customerId], references: [id])
+  userId       String            // The barber
+  user         User              @relation(fields: [userId], references: [id])
+  serviceId    String
+  service      Service           @relation(fields: [serviceId], references: [id])
+  
+  date         DateTime          // Scheduled date and time
+  status       AppointmentStatus @default(PENDING)
+  notes        String?
+  
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  deletedAt    DateTime?
+}
+
+model Product {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  name         String
+  description  String?
+  price        Decimal    @db.Decimal(10, 2)
+  stock        Int        @default(0)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  sales        ProductSale[]
+}
+
+model ProductSale {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id])
+  customerId   String?
+  customer     Customer?  @relation(fields: [customerId], references: [id])
+  
+  quantity     Int
+  totalPrice   Decimal    @db.Decimal(10, 2)
+  saleDate     DateTime   @default(now())
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+model FinancialTransaction {
+  id           String          @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop      @relation(fields: [barbershopId], references: [id])
+  type         TransactionType
+  amount       Decimal         @db.Decimal(10, 2)
+  description  String
+  date         DateTime        @default(now())
+  
+  // Optional relations to track source
+  appointmentId String?
+  saleId        String?
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  deletedAt    DateTime?
+}
+
+model WorkSchedule {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  userId       String
+  user         User       @relation(fields: [userId], references: [id])
+  
+  dayOfWeek    Int        // 0 = Sunday, 1 = Monday, etc.
+  startTime    String     // e.g., "09:00"
+  endTime      String     // e.g., "18:00"
+  breakStart   String?    // e.g., "12:00"
+  breakEnd     String?    // e.g., "13:00"
+  
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model BlockedTime {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  userId       String?    // Optional: if null, blocks entire shop
+  user         User?      @relation(fields: [userId], references: [id])
+  
+  startTime    DateTime
+  endTime      DateTime
+  reason       String?
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Settings {
+  id           String     @id @default(uuid())
+  barbershopId String     @unique
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
+  
+  openingTime  String     @default("09:00")
+  closingTime  String     @default("19:00")
+  slotDuration Int        @default(30) // in minutes
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
