@@ -1,0 +1,3 @@
+// Types for appointment
+
+export {};
