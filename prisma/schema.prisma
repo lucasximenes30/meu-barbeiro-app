@@ -2,7 +2,8 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
@@ -124,6 +125,7 @@ model Product {
   barbershop   Barbershop @relation(fields: [barbershopId], references: [id])
   name         String
   description  String?
+  imageUrl     String?    // Image URL for the product
   price        Decimal    @db.Decimal(10, 2)
   stock        Int        @default(0)
   isActive     Boolean    @default(true)

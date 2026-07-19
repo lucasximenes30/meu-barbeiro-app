@@ -8,8 +8,9 @@ const service = new FinanceService(new FinanceRepository());
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // const item = await service.findById((await params).id);
-    return successResponse({ id: (await params).id }, 'Item retrieved successfully');
+    const barbershopId = process.env.DEFAULT_BARBERSHOP_ID || '12345678-1234-1234-1234-123456789012';
+    const item = await service.findById((await params).id, barbershopId);
+    return successResponse(item, 'Item retrieved successfully');
   } catch (error) {
     return handleError(error);
   }
@@ -18,8 +19,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await req.json();
-    // const updated = await service.update((await params).id, body);
-    return successResponse({ id: (await params).id, ...body }, 'Updated successfully');
+    const updated = await service.update((await params).id, body);
+    return successResponse(updated, 'Updated successfully');
   } catch (error) {
     return handleError(error);
   }
@@ -28,8 +29,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const body = await req.json();
-    // const patched = await service.patch((await params).id, body);
-    return successResponse({ id: (await params).id, ...body }, 'Patched successfully');
+    const patched = await service.update((await params).id, body);
+    return successResponse(patched, 'Patched successfully');
   } catch (error) {
     return handleError(error);
   }
@@ -37,7 +38,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // await service.delete((await params).id);
+    await service.delete((await params).id);
     return successResponse(null, 'Deleted successfully');
   } catch (error) {
     return handleError(error);

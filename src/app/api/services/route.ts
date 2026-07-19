@@ -8,8 +8,9 @@ const service = new ServiceService(new ServiceRepository());
 
 export async function GET(req: NextRequest) {
   try {
-    // const items = await service.findAll();
-    return successResponse([], 'List retrieved successfully');
+    const barbershopId = process.env.DEFAULT_BARBERSHOP_ID || '12345678-1234-1234-1234-123456789012';
+    const items = await service.findAll(barbershopId);
+    return successResponse(items, 'List retrieved successfully');
   } catch (error) {
     return handleError(error);
   }
@@ -18,8 +19,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    // const created = await service.create(body);
-    return successResponse({}, 'Created successfully', 201);
+    const barbershopId = process.env.DEFAULT_BARBERSHOP_ID || '12345678-1234-1234-1234-123456789012';
+    const created = await service.create({ ...body, barbershopId });
+    return successResponse(created, 'Created successfully', 201);
   } catch (error) {
     return handleError(error);
   }
