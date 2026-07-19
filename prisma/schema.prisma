@@ -34,6 +34,7 @@ model Barbershop {
   schedules    WorkSchedule[]
   blockedTimes BlockedTime[]
   settings     Settings?
+  conversations Conversation[]
 }
 
 enum Role {
@@ -77,6 +78,7 @@ model Customer {
 
   appointments Appointment[]
   purchases    ProductSale[]
+  conversations Conversation[]
 }
 
 model Service {
@@ -250,4 +252,30 @@ model PlatformSettings {
   isActive     Boolean    @default(true)
   
   updatedAt    DateTime   @updatedAt
+}
+
+model Conversation {
+  id           String     @id @default(uuid())
+  barbershopId String
+  barbershop   Barbershop @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
+  customerId   String?
+  customer     Customer?  @relation(fields: [customerId], references: [id])
+  clientName   String     // Guardado enquanto o customer não é criado
+  clientPhone  String?
+  status       String     @default("active") // active, human, resolved
+  unread       Boolean    @default(true)
+  messages     Message[]
+  
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         String       // bot, client, barber, system
+  text           String
+  
+  createdAt      DateTime     @default(now())
 }

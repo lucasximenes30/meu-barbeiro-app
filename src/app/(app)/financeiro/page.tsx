@@ -1,7 +1,7 @@
 'use client';
 
 import { useFinancialStore } from '@/store/useFinancialStore';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   BarChart,
@@ -11,6 +11,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Cell,
 } from 'recharts';
 import {
   Table,
@@ -35,13 +36,28 @@ export default function FinanceiroPage() {
   const receitaServicos = transactions.filter(t => t.tipo === 'servico').reduce((acc, t) => acc + t.valor, 0);
   const receitaProdutos = transactions.filter(t => t.tipo === 'produto').reduce((acc, t) => acc + t.valor, 0);
 
-  // Mock de dados para o gráfico de faturamento por período
-  const dataGrafico = [
-    { name: 'Semana 1', serviços: 1200, produtos: 400 },
-    { name: 'Semana 2', serviços: 1500, produtos: 350 },
-    { name: 'Semana 3', serviços: 1800, produtos: 500 },
-    { name: 'Semana 4', serviços: 2000, produtos: 600 },
-  ];
+  const dataGrafico = useMemo(() => {
+    if (!transactions.length) return [];
+    
+    const sorted = [...transactions].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    
+    const grouped = sorted.reduce((acc, t) => {
+      const date = new Date(t.data);
+      const month = format(date, 'MMM yyyy', { locale: ptBR });
+      const monthKey = format(date, 'yyyy-MM');
+      if (!acc[monthKey]) {
+        acc[monthKey] = { name: month.charAt(0).toUpperCase() + month.slice(1), serviços: 0, produtos: 0 };
+      }
+      if (t.tipo === 'servico') acc[monthKey].serviços += t.valor;
+      if (t.tipo === 'produto') acc[monthKey].produtos += t.valor;
+      return acc;
+    }, {} as Record<string, { name: string, serviços: number, produtos: number }>);
+    
+    return Object.values(grouped);
+  }, [transactions]);
+
+  const COLORS_SERVICOS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308'];
+  const COLORS_PRODUTOS = ['#93c5fd', '#c4b5fd', '#fbcfe8', '#fda4af', '#fdba74', '#fef08a'];
 
   return (
     <div className="space-y-6">
@@ -107,8 +123,16 @@ export default function FinanceiroPage() {
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                   contentStyle={{ backgroundColor: '#1f1f1f', borderColor: '#333' }}
                 />
-                <Bar dataKey="serviços" stackId="a" fill="var(--color-primary)" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="produtos" stackId="a" fill="var(--color-secondary-foreground)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="serviços" stackId="a" radius={[0, 0, 4, 4]}>
+                  {dataGrafico.map((entry, index) => (
+                    <Cell key={`cell-s-${index}`} fill={COLORS_SERVICOS[index % COLORS_SERVICOS.length]} />
+                  ))}
+                </Bar>
+                <Bar dataKey="produtos" stackId="a" radius={[4, 4, 0, 0]}>
+                  {dataGrafico.map((entry, index) => (
+                    <Cell key={`cell-p-${index}`} fill={COLORS_PRODUTOS[index % COLORS_PRODUTOS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

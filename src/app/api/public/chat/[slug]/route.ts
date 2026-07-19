@@ -24,6 +24,15 @@ export async function GET(
             openingTime: true,
             closingTime: true,
           }
+        },
+        services: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            duration: true
+          }
         }
       }
     });

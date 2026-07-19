@@ -69,7 +69,8 @@ export default function DashboardPage() {
   }, [period]);
 
   const hoje = new Date().toISOString().split('T')[0];
-  const agendamentosHoje = appointments.filter((a) => a.data === hoje);
+  const validAppointments = appointments.filter(a => a.status !== 'cancelado');
+  const agendamentosHoje = validAppointments.filter((a) => a.data === hoje);
   const totalClientes = clients.length;
 
   const isLoading = loadAppts || loadFin || loadProd || loadCli;
@@ -109,20 +110,7 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/30 border border-white/5">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground">
-              <MessageCircle className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="font-semibold text-sm">WhatsApp desconectado</h4>
-              <p className="text-[11px] text-muted-foreground">Conecte para enviar mensagens automáticas</p>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" className="bg-transparent border-white/10 text-xs h-8 px-3 rounded-lg hover:bg-white/5" onClick={() => router.push('/configuracoes?tab=whatsapp')}>
-            Configurar
-          </Button>
-        </div>
+
       </div>
 
       {/* Grid Metrics */}
@@ -144,7 +132,7 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Semana</p>
-            <p className="font-bold text-lg leading-none">{appointments.length}</p>
+            <p className="font-bold text-lg leading-none">{validAppointments.length}</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">agendamentos</p>
           </div>
         </div>
@@ -179,9 +167,12 @@ export default function DashboardPage() {
             <h3 className="font-bold text-lg">Receita</h3>
             <p className="text-xs text-muted-foreground">Visão geral financeira</p>
           </div>
-          <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-muted-foreground">
+          <button 
+            onClick={() => router.push('/financeiro')}
+            className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-muted-foreground hover:bg-white/5 transition-colors"
+          >
             <ArrowUpRight className="w-4 h-4" />
-          </div>
+          </button>
         </div>
         
         <div className="mb-8">

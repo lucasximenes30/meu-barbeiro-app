@@ -4,9 +4,28 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot, User, CheckCircle2, Clock, Search, ArrowLeft, Send, MoreVertical, Phone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { getConversations } from '@/app/actions/chat';
+
+type MessageFormat = {
+  type?: 'date' | 'system' | 'typing';
+  sender?: 'bot' | 'client' | 'barber';
+  text?: string;
+  time?: string;
+};
+
+type ConversationFormat = {
+  id: string;
+  clientName: string;
+  lastMessage: string;
+  time: string;
+  status: string;
+  unread: boolean;
+  messages: MessageFormat[];
+};
 
 export default function ChatPage() {
-  const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [conversations, setConversations] = useState<ConversationFormat[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -17,59 +36,44 @@ export default function ChatPage() {
     if (selectedChatId) {
       scrollToBottom();
     }
-  }, [selectedChatId]);
+  }, [selectedChatId, conversations]);
 
-  // Mock data to simulate the inbox of bot conversations
-  const conversations = [
-    {
-      id: 1,
-      clientName: 'João Silva',
-      lastMessage: 'Agendamento confirmado para amanhã às 14:00.',
-      time: 'Agora mesmo',
-      status: 'resolved', 
-      unread: true,
-      messages: [
-        { type: 'date', text: 'Hoje' },
-        { sender: 'bot', text: 'Olá! Sou o assistente virtual. Como posso ajudar?', time: '13:50' },
-        { sender: 'client', text: 'Quero agendar um corte para amanhã.', time: '13:52' },
-        { sender: 'bot', text: 'Temos horários às 14:00 e 16:00. Qual prefere?', time: '13:52' },
-        { sender: 'client', text: '14:00', time: '13:55' },
-        { sender: 'bot', text: 'Agendamento confirmado para amanhã às 14:00. Te esperamos lá!', time: '13:56' },
-        { type: 'system', text: 'Atendimento automático finalizado.' }
-      ]
-    },
-    {
-      id: 2,
-      clientName: 'Marcos Paulo',
-      lastMessage: 'Gostaria de saber o valor do corte degradê.',
-      time: '10 min',
-      status: 'active', 
-      unread: false,
-      messages: [
-        { type: 'date', text: 'Ontem' },
-        { sender: 'bot', text: 'Olá, Marcos! Tudo bem?', time: '14:10' },
-        { type: 'date', text: 'Hoje' },
-        { sender: 'client', text: 'Gostaria de saber o valor do corte degradê.', time: '14:15' },
-        { type: 'typing' }
-      ]
-    },
-    {
-      id: 3,
-      clientName: 'Felipe Almeida',
-      lastMessage: 'Perfeito, obrigado!',
-      time: '1 hora',
-      status: 'human',
-      unread: false,
-      messages: [
-        { type: 'date', text: 'Segunda-feira' },
-        { sender: 'client', text: 'Tem horário sábado cedo?', time: '09:00' },
-        { sender: 'bot', text: 'Sim, o primeiro é às 09:30.', time: '09:01' },
-        { type: 'system', text: 'Atendimento assumido pelo barbeiro.' },
-        { sender: 'barber', text: 'Fala Felipe! Já deixei reservado aqui pra você meu irmão. 09:30 em ponto.', time: '09:10' },
-        { sender: 'client', text: 'Perfeito, obrigado!', time: '09:12' },
-      ]
+  const loadConversations = async () => {
+    const res = await getConversations();
+    if (res.success && res.data) {
+      const formatted = res.data.map(conv => {
+        // Format time logic (simplified for UI)
+        const date = new Date(conv.updatedAt);
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        // Formata as mensagens do banco
+        const msgs: MessageFormat[] = conv.messages.map(m => ({
+          sender: m.sender as any,
+          text: m.text,
+          time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+        
+        const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1].text : '';
+
+        return {
+          id: conv.id,
+          clientName: conv.clientName,
+          lastMessage: lastMsg || '',
+          time: timeStr,
+          status: conv.status,
+          unread: conv.unread,
+          messages: msgs
+        };
+      });
+      setConversations(formatted);
     }
-  ];
+  };
+
+  useEffect(() => {
+    loadConversations();
+    const interval = setInterval(loadConversations, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   const selectedChat = conversations.find(c => c.id === selectedChatId);
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Outfit } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -41,7 +42,9 @@ export default function RootLayout({
       <body className="flex h-[100dvh] overflow-hidden bg-background overscroll-none">
         {children}
         <Toaster position="top-center" richColors />
-        <script
+        <Script
+          id="service-worker"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {

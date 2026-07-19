@@ -10,7 +10,7 @@ export async function saveAutomations(automations: Record<string, boolean>) {
     const token = cookieStore.get('auth_token')?.value;
     if (!token) throw new Error('Não autorizado');
     
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only');
     const { payload } = await jwtVerify(token, secret);
     const barbershopId = payload.barbershopId as string;
 
@@ -41,7 +41,7 @@ export async function getAutomations() {
     const token = cookieStore.get('auth_token')?.value;
     if (!token) throw new Error('Não autorizado');
     
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only');
     const { payload } = await jwtVerify(token, secret);
     const barbershopId = payload.barbershopId as string;
 

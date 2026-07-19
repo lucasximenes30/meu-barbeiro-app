@@ -10,7 +10,7 @@ export async function getPublicChatSettings() {
     const token = cookieStore.get('auth_token')?.value;
     if (!token) throw new Error('Não autorizado');
     
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only');
     const { payload } = await jwtVerify(token, secret);
     const barbershopId = payload.barbershopId as string;
 
@@ -37,7 +37,7 @@ export async function savePublicChatSettings(data: { slug?: string, logoUrl?: st
     const token = cookieStore.get('auth_token')?.value;
     if (!token) throw new Error('Não autorizado');
     
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'secret');
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only');
     const { payload } = await jwtVerify(token, secret);
     const barbershopId = payload.barbershopId as string;
 

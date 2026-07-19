@@ -4,12 +4,13 @@ import { handleError } from '@/lib/error';
 import { AppointmentService } from '@/modules/appointments/appointment.service';
 import { AppointmentRepository } from '@/modules/appointments/appointment.repository';
 import { prisma } from '@/lib/prisma';
+import { getAuthBarbershopId } from '@/lib/auth-server';
 
 const service = new AppointmentService(new AppointmentRepository());
 
 export async function GET(req: NextRequest) {
   try {
-    const barbershopId = process.env.DEFAULT_BARBERSHOP_ID || '12345678-1234-1234-1234-123456789012';
+    const barbershopId = await getAuthBarbershopId(req);
     const items = await service.findAll(barbershopId);
     return successResponse(items, 'List retrieved successfully');
   } catch (error) {
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const barbershopId = process.env.DEFAULT_BARBERSHOP_ID || '12345678-1234-1234-1234-123456789012';
+    const barbershopId = await getAuthBarbershopId(req);
     
     // We need a userId since frontend doesn't send it
     const defaultUser = await prisma.user.findFirst({ where: { barbershopId } });

@@ -3,12 +3,13 @@ import { successResponse } from '@/lib/response';
 import { handleError } from '@/lib/error';
 import { ProductService } from '@/modules/products/product.service';
 import { ProductRepository } from '@/modules/products/product.repository';
+import { getAuthBarbershopId } from '@/lib/auth-server';
 
 const service = new ProductService(new ProductRepository());
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const barbershopId = process.env.DEFAULT_BARBERSHOP_ID || '12345678-1234-1234-1234-123456789012';
+    const barbershopId = await getAuthBarbershopId(req);
     const item = await service.findById((await params).id, barbershopId);
     return successResponse(item, 'Item retrieved successfully');
   } catch (error) {

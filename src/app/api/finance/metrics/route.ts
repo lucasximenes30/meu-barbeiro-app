@@ -1,30 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { startOfDay, startOfWeek, startOfMonth, startOfYear, endOfDay } from 'date-fns';
+import { startOfDay, startOfWeek, startOfMonth, startOfYear, endOfDay, endOfWeek, endOfMonth, endOfYear } from 'date-fns';
+import { getAuthBarbershopId } from '@/lib/auth-server';
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const period = searchParams.get('period') || 'hoje';
-    const barbershopId = process.env.DEFAULT_BARBERSHOP_ID || '12345678-1234-1234-1234-123456789012';
+    const barbershopId = await getAuthBarbershopId(req);
 
     const now = new Date();
     let startDate: Date;
-    const endDate = endOfDay(now);
+    let endDate: Date;
 
     switch (period) {
       case 'semana':
         startDate = startOfWeek(now, { weekStartsOn: 0 }); // Domingo
+        endDate = endOfWeek(now, { weekStartsOn: 0 });
         break;
       case 'mes':
         startDate = startOfMonth(now);
+        endDate = endOfMonth(now);
         break;
       case 'ano':
         startDate = startOfYear(now);
+        endDate = endOfYear(now);
         break;
       case 'hoje':
       default:
         startDate = startOfDay(now);
+        endDate = endOfDay(now);
         break;
     }
 
@@ -39,7 +44,7 @@ export async function GET(req: NextRequest) {
         where: {
           barbershopId,
           type: 'INCOME', // assumindo que só queremos receitas
-          createdAt: {
+          date: {
             gte: startDate,
             lte: endDate,
           }

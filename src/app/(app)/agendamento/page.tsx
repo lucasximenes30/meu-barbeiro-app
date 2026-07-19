@@ -40,7 +40,7 @@ export default function AgendamentoPage() {
   }, [fetchAppointments, fetchClients, fetchServices]);
 
   const dataFormatada = format(selectedDate, 'yyyy-MM-dd');
-  const agendamentosDoDia = appointments.filter((a) => a.data === dataFormatada);
+  const agendamentosDoDia = appointments.filter((a) => a.data === dataFormatada && a.status !== 'cancelado');
 
   // Generate the horizontal date scroller
   const startDate = subDays(selectedDate, 2);
@@ -282,6 +282,18 @@ export default function AgendamentoPage() {
                   className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 font-bold transition-colors text-sm"
                 >
                   Fechar
+                </button>
+                <button 
+                  onClick={async () => {
+                    if (confirm('Tem certeza que deseja cancelar este agendamento?')) {
+                      await useAppointmentsStore.getState().updateAppointment(selectedAppointment.id, { status: 'cancelado' });
+                      toast.success('Agendamento cancelado com sucesso!');
+                      setSelectedAppointment(null);
+                    }
+                  }}
+                  className="flex-1 py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold transition-colors text-sm"
+                >
+                  Cancelar
                 </button>
                 <button className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:scale-[1.02] transition-transform text-sm">
                   Iniciar Corte

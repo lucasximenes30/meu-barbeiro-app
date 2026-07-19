@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutGrid, Calendar, MessageCircle, Scissors, ShoppingBag, LogOut } from 'lucide-react';
+import { LayoutGrid, Calendar, MessageCircle, Scissors, ShoppingBag, LogOut, DollarSign } from 'lucide-react';
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -56,6 +56,11 @@ export function BottomNav() {
         <Link href="/produtos" className={`flex flex-col items-center gap-1 transition-all ${pathname === '/produtos' ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}>
           <ShoppingBag className="w-5 h-5" />
           <span className="text-[10px] font-medium hidden sm:block">Produtos</span>
+        </Link>
+
+        <Link href="/financeiro" className={`flex flex-col items-center gap-1 transition-all ${pathname === '/financeiro' ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}>
+          <DollarSign className="w-5 h-5" />
+          <span className="text-[10px] font-medium hidden sm:block">Financeiro</span>
         </Link>
 
         <button onClick={handleLogout} className="flex flex-col items-center gap-1 transition-all text-muted-foreground hover:text-red-500">
