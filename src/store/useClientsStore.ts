@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { Client } from '@/lib/types';
-import { mockClients } from '@/lib/mocks';
 
 interface ClientsState {
   clients: Client[];
@@ -11,45 +10,90 @@ interface ClientsState {
   deleteClient: (id: string) => Promise<void>;
 }
 
-export const useClientsStore = create<ClientsState>((set) => ({
-  clients: mockClients,
+export const useClientsStore = create<ClientsState>((set, get) => ({
+  clients: [],
   isLoading: false,
 
   fetchClients: async () => {
     set({ isLoading: true });
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    set({ isLoading: false });
+    try {
+      const res = await fetch('/api/clients');
+      const json = await res.json();
+      if (json.success) {
+        // Map Prisma Customer to Frontend Client
+        const mapped: Client[] = json.data.map((c: any) => ({
+          id: c.id,
+          nome: c.name,
+          telefone: c.phone || '',
+          ultimaVisita: c.updatedAt,
+          historico: []
+        }));
+        set({ clients: mapped });
+      }
+    } catch (error) {
+      console.error('Failed to fetch clients', error);
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   addClient: async (data) => {
     set({ isLoading: true });
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const newClient: Client = {
-      ...data,
-      id: Math.random().toString(36).substring(7),
-      historico: [],
-    };
-    set((state) => ({
-      clients: [...state.clients, newClient],
-      isLoading: false,
-    }));
+    try {
+      const payload = {
+        name: data.nome,
+        phone: data.telefone
+      };
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        await get().fetchClients();
+      }
+    } catch (error) {
+      console.error('Failed to add client', error);
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   updateClient: async (id, data) => {
     set({ isLoading: true });
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    set((state) => ({
-      clients: state.clients.map((c) => (c.id === id ? { ...c, ...data } : c)),
-      isLoading: false,
-    }));
+    try {
+      const payload: any = {};
+      if (data.nome) payload.name = data.nome;
+      if (data.telefone) payload.phone = data.telefone;
+      
+      const res = await fetch(`/api/clients/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        await get().fetchClients();
+      }
+    } catch (error) {
+      console.error('Failed to update client', error);
+    } finally {
+      set({ isLoading: false });
+    }
   },
 
   deleteClient: async (id) => {
     set({ isLoading: true });
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    set((state) => ({
-      clients: state.clients.filter((c) => c.id !== id),
-      isLoading: false,
-    }));
+    try {
+      const res = await fetch(`/api/clients/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        await get().fetchClients();
+      }
+    } catch (error) {
+      console.error('Failed to delete client', error);
+    } finally {
+      set({ isLoading: false });
+    }
   },
 }));

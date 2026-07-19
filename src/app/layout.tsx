@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
+import { BottomNav } from "@/components/BottomNav";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -9,7 +9,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "BarberPro - Painel de Gestão",
+  title: "Meu Barbeiro App - Painel de Gestão",
   description: "Sistema de gestão para barbearia",
 };
 
@@ -23,13 +23,13 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${outfit.variable} font-sans h-full antialiased dark`}
     >
-      <body className="flex flex-col md:flex-row h-screen overflow-hidden bg-background">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
+      <body className="flex flex-col h-screen overflow-hidden bg-background">
+        <div className="w-full max-w-md mx-auto relative h-full flex flex-col bg-card/10 shadow-2xl border-x border-white/5">
+          <main className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
             {children}
-          </div>
-        </main>
+          </main>
+          <BottomNav />
+        </div>
       </body>
     </html>
   );

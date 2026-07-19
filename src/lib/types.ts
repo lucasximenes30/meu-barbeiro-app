@@ -35,7 +35,7 @@ export interface Service {
 
 export interface Transaction {
   id: string;
-  tipo: 'servico' | 'produto';
+  tipo: 'servico' | 'produto' | 'despesa';
   referenciaId: string; // ID do agendamento ou do produto
   valor: number;
   data: string; // ISO date
