@@ -5,6 +5,7 @@ import { useFinancialStore } from '@/store/useFinancialStore';
 import { useProductsStore } from '@/store/useProductsStore';
 import { useClientsStore } from '@/store/useClientsStore';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AreaChart,
   Area,
@@ -14,12 +15,18 @@ import { Zap, MessageCircle, Calendar, Users, Clock, ArrowUpRight } from 'lucide
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useState } from 'react';
 
 export default function DashboardPage() {
   const { appointments, fetchAppointments, isLoading: loadAppts } = useAppointmentsStore();
   const { transactions, fetchTransactions, isLoading: loadFin } = useFinancialStore();
   const { fetchProducts, isLoading: loadProd } = useProductsStore();
   const { clients, fetchClients, isLoading: loadCli } = useClientsStore();
+  const router = useRouter();
+
+  const [period, setPeriod] = useState('hoje');
+  const [metrics, setMetrics] = useState({ total: 0, dataGrafico: [] as any[] });
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
 
   useEffect(() => {
     fetchAppointments();
@@ -28,23 +35,29 @@ export default function DashboardPage() {
     fetchClients();
   }, [fetchAppointments, fetchTransactions, fetchProducts, fetchClients]);
 
+  useEffect(() => {
+    const loadMetrics = async () => {
+      setLoadingMetrics(true);
+      try {
+        const res = await fetch(`/api/finance/metrics?period=${period}`);
+        const data = await res.json();
+        if (data.success) {
+          setMetrics({ total: data.total, dataGrafico: data.dataGrafico });
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingMetrics(false);
+      }
+    };
+    loadMetrics();
+  }, [period]);
+
   const hoje = new Date().toISOString().split('T')[0];
   const agendamentosHoje = appointments.filter((a) => a.data === hoje);
-  const faturamentoHoje = transactions
-    .filter((t) => t.data.startsWith(hoje))
-    .reduce((acc, t) => acc + t.valor, 0);
   const totalClientes = clients.length;
 
   const isLoading = loadAppts || loadFin || loadProd || loadCli;
-
-  // Mock data for area chart
-  const dataGrafico = [
-    { name: 'Seg', total: 38 },
-    { name: 'Ter', total: 75 },
-    { name: 'Qua', total: 113 },
-    { name: 'Qui', total: 150 },
-    { name: 'Sex', total: 135 },
-  ];
 
   if (isLoading) {
     return (
@@ -76,7 +89,7 @@ export default function DashboardPage() {
               <p className="text-[11px] text-muted-foreground">Até 3 profissionais • Todos os recursos</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs h-8 px-3 rounded-lg">
+          <Button variant="ghost" size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs h-8 px-3 rounded-lg" onClick={() => router.push('/configuracoes?tab=plano')}>
             Meu plano &gt;
           </Button>
         </div>
@@ -91,7 +104,7 @@ export default function DashboardPage() {
               <p className="text-[11px] text-muted-foreground">Conecte para enviar mensagens automáticas</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="bg-transparent border-white/10 text-xs h-8 px-3 rounded-lg hover:bg-white/5">
+          <Button variant="outline" size="sm" className="bg-transparent border-white/10 text-xs h-8 px-3 rounded-lg hover:bg-white/5" onClick={() => router.push('/configuracoes?tab=whatsapp')}>
             Configurar
           </Button>
         </div>
@@ -157,13 +170,24 @@ export default function DashboardPage() {
         </div>
         
         <div className="mb-8">
-          <p className="text-xs text-muted-foreground mb-1">Hoje ▾</p>
-          <h2 className="text-4xl font-bold">R$ {faturamentoHoje.toFixed(2).replace('.', ',')}</h2>
+          <select 
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="bg-transparent text-xs text-muted-foreground mb-1 outline-none cursor-pointer border-none p-0 focus:ring-0"
+          >
+            <option value="hoje" className="bg-zinc-900 text-white">Hoje</option>
+            <option value="semana" className="bg-zinc-900 text-white">Nesta Semana</option>
+            <option value="mes" className="bg-zinc-900 text-white">Neste Mês</option>
+            <option value="ano" className="bg-zinc-900 text-white">Neste Ano</option>
+          </select>
+          <h2 className="text-4xl font-bold">
+            {loadingMetrics ? '...' : `R$ ${metrics.total.toFixed(2).replace('.', ',')}`}
+          </h2>
         </div>
         
         <div className="h-[120px] w-full -mx-2">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={dataGrafico} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={metrics.dataGrafico} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="var(--color-primary)" stopOpacity={0.3}/>

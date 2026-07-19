@@ -53,7 +53,7 @@ export function ClientPortal({ barbershopId, barbershopName }: { barbershopId: s
         </TabsList>
 
         <TabsContent value="agendar" className="mt-0">
-          <ChatBot barbershopId={barbershopId} />
+          <ChatBot barbershopId={barbershopId} barbershopName={barbershopName} />
         </TabsContent>
 
         <TabsContent value="produtos" className="mt-0">

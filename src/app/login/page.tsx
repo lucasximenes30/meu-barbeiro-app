@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (res.ok) {
@@ -51,13 +51,13 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-6 relative z-10">
           <div className="space-y-2">
-            <Label htmlFor="username">Usuário</Label>
+            <Label htmlFor="email">E-mail Profissional</Label>
             <Input
-              id="username"
-              type="text"
-              placeholder="Digite seu usuário"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="email"
+              type="email"
+              placeholder="contato@barbearia.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="bg-background/50 border-white/10 focus-visible:ring-primary/50"
             />

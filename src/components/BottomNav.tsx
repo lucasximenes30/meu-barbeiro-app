@@ -7,8 +7,14 @@ import { LayoutGrid, Calendar, MessageCircle, Scissors, ShoppingBag } from 'luci
 export function BottomNav() {
   const pathname = usePathname();
 
-  // Hide BottomNav on public booking page and login
-  if (pathname.startsWith('/agendar') || pathname === '/login') {
+  // Hide BottomNav on public booking page, login, admin panels and registration
+  if (
+    pathname.startsWith('/agendar') || 
+    pathname.startsWith('/superadmin') || 
+    pathname === '/login' ||
+    pathname === '/cadastro' ||
+    pathname === '/'
+  ) {
     return null;
   }
 

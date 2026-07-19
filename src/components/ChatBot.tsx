@@ -16,9 +16,9 @@ interface Message {
   options?: { label: string; value: string }[];
 }
 
-export function ChatBot({ barbershopId }: { barbershopId: string }) {
+export function ChatBot({ barbershopId, barbershopName }: { barbershopId: string, barbershopName: string }) {
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', type: 'bot', text: 'Olá! Sou o assistente virtual da barbearia. Qual é o seu nome?' }
+    { id: '1', type: 'bot', text: `Olá, tudo bem? Sou a assistente virtual do(a) ${barbershopName} e cuido do agendamento dos serviços, ok? Qual o seu nome? Escreva seu nome e sobrenome, por favor.` }
   ]);
   const [inputValue, setInputValue] = useState('');
   const [step, setStep] = useState(0);
@@ -63,7 +63,7 @@ export function ChatBot({ barbershopId }: { barbershopId: string }) {
       });
   }, []);
 
-  const addBotMessage = (text: string, options?: any[]) => {
+  const addBotMessage = (text: string, options?: { label: string; value: string }[]) => {
     setMessages(prev => [...prev, {
       id: Date.now().toString(),
       type: 'bot',
@@ -204,7 +204,7 @@ export function ChatBot({ barbershopId }: { barbershopId: string }) {
         }
         setStep(8);
       }
-    } catch (error) {
+    } catch (error: unknown) {
       addBotMessage('Desculpe, ocorreu um erro. Vamos tentar novamente?');
     } finally {
       setIsLoading(false);
@@ -247,7 +247,7 @@ export function ChatBot({ barbershopId }: { barbershopId: string }) {
       } else {
         throw new Error('Falha');
       }
-    } catch (e) {
+    } catch {
       addBotMessage('❌ Poxa, não consegui salvar seu agendamento. Pode tentar de novo mais tarde?');
       setStep(8);
     }
@@ -261,7 +261,7 @@ export function ChatBot({ barbershopId }: { barbershopId: string }) {
           <Bot className="w-6 h-6" />
         </div>
         <div>
-          <h3 className="font-bold text-lg text-primary leading-tight">Assistente Meu Barbeiro App</h3>
+          <h3 className="font-bold text-lg text-primary leading-tight">Assistente do(a) {barbershopName}</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Online 24/7 para você</p>
         </div>
       </div>
