@@ -25,10 +25,14 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await res.json();
       if (res.ok) {
-        window.location.href = '/dashboard';
+        if (data.role === 'SUPER_ADMIN') {
+          window.location.href = '/admin';
+        } else {
+          window.location.href = '/dashboard';
+        }
       } else {
-        const data = await res.json();
         setError(data.message || 'Credenciais inválidas');
       }
     } catch (err) {
@@ -39,8 +43,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md p-8 glass-card rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden">
+    <div className="h-full w-full flex-1 flex items-center justify-center bg-background px-4">
+      <div className="w-full max-w-md p-8 glass-card rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden -mt-12 md:-mt-6">
         {/* Decorative background elements */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
         

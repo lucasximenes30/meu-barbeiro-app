@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { SignJWT } from 'jose';
+
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only');
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,13 +12,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Preencha e-mail e senha' }, { status: 400 });
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@barbearia.com';
-    const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
+    const adminEmail = process.env.ADMIN_EMAIL?.trim();
+    const adminPass = process.env.ADMIN_PASSWORD?.trim();
+
+    // Log para depuração caso a variável não esteja carregando corretamente
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Login attempt:', email, '| Configured ADMIN:', adminEmail);
+    }
 
     // Mock fallback executado antes do DB para garantir o acesso mesmo se houver erro no banco
-    if (email === adminEmail && password === adminPass) {
-      const response = NextResponse.json({ success: true, message: 'Logged in with Mock' });
-      response.cookies.set('auth_token', 'mock_admin', { httpOnly: true, path: '/' });
+    if (adminEmail && adminPass && email === adminEmail && password === adminPass) {
+      const token = await new SignJWT({ id: 'mock_admin', role: 'SUPER_ADMIN', name: 'Admin Supremo' })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('7d')
+        .sign(JWT_SECRET);
+        
+      const response = NextResponse.json({ success: true, message: 'Logged in with Mock', role: 'SUPER_ADMIN' });
+      response.cookies.set('auth_token', token, { httpOnly: true, path: '/' });
       return response;
     }
 
@@ -28,17 +42,21 @@ export async function POST(req: NextRequest) {
       console.warn('Banco de dados indisponível para login:', dbError);
     }
 
-    // Em produção você deve comparar a senha usando bcrypt (ex: bcrypt.compareSync)
-    // Aqui estamos verificando direto pois no /api/cadastro também salvamos em plain text para facilitar o MVP.
     if (user && user.password === password) {
-      // Set cookie to simulate session
+      const token = await new SignJWT({ id: user.id, role: user.role, name: user.name, barbershopId: user.barbershopId })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('7d')
+        .sign(JWT_SECRET);
+        
       const response = NextResponse.json({ 
         success: true, 
         message: 'Logged in successfully',
+        role: user.role,
         user: { id: user.id, name: user.name, barbershopId: user.barbershopId }
       });
       
-      response.cookies.set('auth_token', user.id, {
+      response.cookies.set('auth_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

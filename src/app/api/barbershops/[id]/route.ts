@@ -1,45 +1,56 @@
-import { NextRequest } from 'next/server';
-import { successResponse } from '@/lib/response';
-import { handleError } from '@/lib/error';
-import { BarbershopService } from '@/modules/barbershops/barbershop.service';
-import { BarbershopRepository } from '@/modules/barbershops/barbershop.repository';
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
-const service = new BarbershopService(new BarbershopRepository());
-
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    // const item = await service.findById((await params).id);
-    return successResponse({ id: (await params).id }, 'Item retrieved successfully');
+    const { id } = await params;
+    const shop = await prisma.barbershop.findUnique({
+      where: { id }
+    });
+    if (!shop) return NextResponse.json({ error: 'Não encontrado' }, { status: 404 });
+    return NextResponse.json(shop);
   } catch (error) {
-    return handleError(error);
+    return NextResponse.json({ error: 'Erro ao buscar' }, { status: 500 });
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const body = await req.json();
-    // const updated = await service.update((await params).id, body);
-    return successResponse({ id: (await params).id, ...body }, 'Updated successfully');
+    const { id } = await params;
+    const body = await request.json();
+    const { name, phone, subscriptionFee, isActive } = body;
+
+    const parsedFee = subscriptionFee ? parseFloat(subscriptionFee) : 0;
+
+    const updated = await prisma.barbershop.update({
+      where: { id },
+      data: {
+        name,
+        phone: phone || null,
+        subscriptionFee: parsedFee,
+        isActive: isActive === true || isActive === 'true',
+      },
+    });
+
+    return NextResponse.json({ success: true, barbershop: updated });
   } catch (error) {
-    return handleError(error);
+    console.error('Error updating barbershop:', error);
+    return NextResponse.json({ error: 'Erro ao atualizar barbearia' }, { status: 500 });
   }
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const body = await req.json();
-    // const patched = await service.patch((await params).id, body);
-    return successResponse({ id: (await params).id, ...body }, 'Patched successfully');
-  } catch (error) {
-    return handleError(error);
-  }
-}
+    const { id } = await params;
+    // Because schema.prisma has onDelete: Cascade on almost all barbershop relations,
+    // deleting the barbershop will clean up everything (users, customers, appointments, etc).
+    await prisma.barbershop.delete({
+      where: { id },
+    });
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    // await service.delete((await params).id);
-    return successResponse(null, 'Deleted successfully');
+    return NextResponse.json({ success: true, message: 'Barbearia deletada permanentemente' });
   } catch (error) {
-    return handleError(error);
+    console.error('Error deleting barbershop:', error);
+    return NextResponse.json({ error: 'Erro ao deletar barbearia' }, { status: 500 });
   }
 }

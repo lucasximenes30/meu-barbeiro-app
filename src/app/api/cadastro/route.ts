@@ -3,13 +3,23 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { barbershopName, ownerName, email, phone, password } = body;
+    const {
+      ownerName,
+      email,
+      password,
+      barbershopName,
+      phone,
+      subscriptionFee
+    } = await request.json();
 
-    // Validate
-    if (!barbershopName || !ownerName || !email || !password) {
-      return NextResponse.json({ error: 'Preencha todos os campos obrigatórios' }, { status: 400 });
+    if (!ownerName || !email || !password || !barbershopName) {
+      return NextResponse.json(
+        { error: 'Nome do dono, email, senha e nome da barbearia são obrigatórios' },
+        { status: 400 }
+      );
     }
+
+    const parsedFee = subscriptionFee ? parseFloat(subscriptionFee) : 99.90;
 
     // Check if email is already taken
     const existingUser = await prisma.user.findUnique({
@@ -27,6 +37,7 @@ export async function POST(request: Request) {
         data: {
           name: barbershopName,
           phone: phone || null,
+          subscriptionFee: parsedFee
         }
       });
 
@@ -50,7 +61,7 @@ export async function POST(request: Request) {
           email: email,
           password: password, // TODO: encrypt this!
           phone: phone || null,
-          role: 'OWNER'
+          role: 'BARBER'
         }
       });
 

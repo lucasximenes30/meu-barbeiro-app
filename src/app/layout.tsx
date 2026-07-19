@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-import { BottomNav } from "@/components/BottomNav";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -11,6 +11,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Meu Barbeiro App - Painel de Gestão",
   description: "Sistema de gestão para barbearia",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -24,7 +25,7 @@ export const viewport: import('next').Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#000000',
+  themeColor: '#09090b',
 };
 
 export default function RootLayout({
@@ -37,13 +38,27 @@ export default function RootLayout({
       lang="pt-BR"
       className={`${outfit.variable} font-sans h-full antialiased dark`}
     >
-      <body className="flex flex-col h-[100dvh] overflow-hidden bg-background overscroll-none">
-        <div className="w-full max-w-md mx-auto relative h-full flex flex-col bg-card/10 shadow-2xl border-x border-white/5">
-          <main className="flex-1 overflow-y-auto pb-24 scrollbar-hide">
-            {children}
-          </main>
-          <BottomNav />
-        </div>
+      <body className="flex h-[100dvh] overflow-hidden bg-background overscroll-none">
+        {children}
+        <Toaster position="top-center" richColors />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(
+                    function(registration) {
+                      console.log('ServiceWorker registration successful');
+                    },
+                    function(err) {
+                      console.log('ServiceWorker registration failed: ', err);
+                    }
+                  );
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

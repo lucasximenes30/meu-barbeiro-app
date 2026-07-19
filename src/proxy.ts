@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
-export default function proxy(request: NextRequest) {
+const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-key-for-dev-only');
+
+export async function proxy(request: NextRequest) {
   const token = request.cookies.get('auth_token')?.value;
 
-  // Rotas protegidas
-  const protectedRoutes = [
+  // Rotas protegidas (Painel Barbeiro)
+  const dashboardRoutes = [
     '/dashboard',
     '/agendamento',
     '/clientes',
@@ -14,26 +17,59 @@ export default function proxy(request: NextRequest) {
     '/financeiro',
     '/configuracoes'
   ];
+  
+  // Rotas protegidas (Painel Super Admin)
+  const adminRoutes = [
+    '/admin'
+  ];
 
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
-  );
+  const pathname = request.nextUrl.pathname;
+  const isDashboardRoute = dashboardRoutes.some(route => pathname.startsWith(route));
+  const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route));
+  const isProtectedRoute = isDashboardRoute || isAdminRoute;
 
-  if (isProtectedRoute && token !== 'authenticated') {
+  let decodedToken = null;
+
+  if (token) {
+    try {
+      const { payload } = await jwtVerify(token, JWT_SECRET);
+      decodedToken = payload;
+    } catch (err) {
+      console.warn('Token inválido ou expirado:', err);
+      const res = pathname === '/login' ? NextResponse.next() : NextResponse.redirect(new URL('/login', request.url));
+      res.cookies.delete('auth_token');
+      return res;
+    }
+  }
+
+  // Redireciona para o login se tentar acessar rota protegida sem token válido
+  if (isProtectedRoute && !decodedToken) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // Redireciona para o dashboard se estiver logado e tentar acessar o login ou home
-  if (
-    (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/') && 
-    token === 'authenticated'
-  ) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
+  if (decodedToken) {
+    const role = decodedToken.role as string;
 
-  // Redireciona a raiz para login se não estiver logado
-  if (request.nextUrl.pathname === '/' && token !== 'authenticated') {
-    return NextResponse.redirect(new URL('/login', request.url));
+    // Se tentar acessar o root ou login já estando logado, redireciona pro painel correto
+    if (pathname === '/' || pathname === '/login') {
+      if (role === 'SUPER_ADMIN') {
+        return NextResponse.redirect(new URL('/admin', request.url));
+      } else {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    }
+
+    // Se é SUPER_ADMIN e tenta acessar dashboard, podemos deixar ou redirecionar
+    // (opcional: redirecionar SUPER_ADMIN para /admin se ele não pode ver o dashboard, 
+    // mas talvez o SUPER_ADMIN possa ver, então por enquanto só garantimos que Barbeiros não vejam /admin)
+    if (isAdminRoute && role !== 'SUPER_ADMIN') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+  } else {
+    // Redireciona a raiz para login se não estiver logado
+    if (pathname === '/') {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   return NextResponse.next();
