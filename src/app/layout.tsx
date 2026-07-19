@@ -16,7 +16,15 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Meu Barbeiro",
   },
-  themeColor: "#000000",
+};
+
+export const viewport: import('next').Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+  themeColor: '#000000',
 };
 
 export default function RootLayout({
