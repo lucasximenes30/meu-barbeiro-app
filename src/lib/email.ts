@@ -4,11 +4,11 @@ import nodemailer from 'nodemailer';
 // Como estamos em ambiente de desenvolvimento/teste, usaremos um mock
 // ou você pode colocar suas credenciais reais aqui.
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.ethereal.email',
+  host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '587'),
   auth: {
-    user: process.env.SMTP_USER || 'test@ethereal.email',
-    pass: process.env.SMTP_PASS || 'password',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 

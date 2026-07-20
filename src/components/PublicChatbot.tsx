@@ -22,7 +22,8 @@ interface PublicChatbotProps {
 }
 
 interface Message {
-  sender: 'bot' | 'client';
+  id?: string;
+  sender: 'bot' | 'client' | 'barber';
   text: string;
   time: string;
   options?: string[];
@@ -59,6 +60,41 @@ export function PublicChatbot({ barbershop }: PublicChatbotProps) {
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  // Polling para escutar mensagens do barbeiro
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const pollMessages = async () => {
+      try {
+        const res = await fetch(`/api/public/chat/${barbershop.id}/poll?conversationId=${conversationId}`);
+        const data = await res.json();
+        
+        if (data.success && data.messages) {
+          setMessages(prev => {
+            let hasNew = false;
+            const newMessages = [...prev];
+            
+            for (const msg of data.messages) {
+              // Verifica se a mensagem (pelo ID) já está no estado
+              const exists = newMessages.find(m => m.id === msg.id);
+              if (!exists) {
+                newMessages.push(msg);
+                hasNew = true;
+              }
+            }
+            
+            return hasNew ? newMessages : prev;
+          });
+        }
+      } catch (e) {
+        console.error('Polling error:', e);
+      }
+    };
+
+    const interval = setInterval(pollMessages, 3000);
+    return () => clearInterval(interval);
+  }, [conversationId, barbershop.id]);
 
   // Sincroniza mensagem com o backend (Inbox)
   const syncMessage = async (text: string, sender: 'bot' | 'client', currentConvId: string | null, clientName: string, clientPhone: string) => {

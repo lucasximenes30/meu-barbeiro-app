@@ -28,7 +28,7 @@ export function BottomNav() {
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 w-full left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-white/10 z-50 px-4 py-3 pb-8 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
+    <div className="md:hidden fixed bottom-0 w-full left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-white/10 z-50 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),1.5rem)] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
       <div className="flex items-center justify-between">
         
         <Link href="/dashboard" className={`flex flex-col items-center gap-1 transition-all ${pathname === '/dashboard' ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}>

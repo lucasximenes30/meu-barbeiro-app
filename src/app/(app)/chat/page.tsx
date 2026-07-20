@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Bot, User, CheckCircle2, Clock, Search, ArrowLeft, Send, MoreVertical, Phone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { getConversations } from '@/app/actions/chat';
+import { getConversations, sendMessage } from '@/app/actions/chat';
 
 type MessageFormat = {
   type?: 'date' | 'system' | 'typing';
@@ -26,6 +26,8 @@ type ConversationFormat = {
 export default function ChatPage() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [conversations, setConversations] = useState<ConversationFormat[]>([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -74,6 +76,24 @@ export default function ChatPage() {
     const interval = setInterval(loadConversations, 3000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!selectedChatId || !newMessage.trim() || isSending) return;
+
+    setIsSending(true);
+    const text = newMessage.trim();
+    setNewMessage(''); // Limpa o input imediatamente para melhor UX
+    
+    const res = await sendMessage(selectedChatId, text);
+    if (res.success) {
+      await loadConversations();
+      scrollToBottom();
+    } else {
+      setNewMessage(text); // Reverte o input em caso de erro
+    }
+    setIsSending(false);
+  };
 
   const selectedChat = conversations.find(c => c.id === selectedChatId);
 
@@ -184,17 +204,25 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input simulado */}
+        {/* Input */}
         <div className="p-4 bg-background/80 backdrop-blur-xl border-t border-white/5 sticky bottom-0 pb-safe">
-          <div className="relative max-w-3xl mx-auto flex items-center gap-2">
+          <form onSubmit={handleSendMessage} className="relative max-w-3xl mx-auto flex items-center gap-2">
             <Input
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              disabled={isSending}
               placeholder="Digite uma mensagem para o cliente..."
-              className="flex-1 h-12 bg-secondary/30 border-white/10 rounded-full px-5 text-sm focus-visible:ring-1 focus-visible:ring-primary/50"
+              className="flex-1 h-12 bg-secondary/30 border-white/10 rounded-full px-5 text-sm focus-visible:ring-1 focus-visible:ring-primary/50 disabled:opacity-70"
             />
-            <Button size="icon" className="shrink-0 h-12 w-12 rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+            <Button 
+              type="submit"
+              disabled={!newMessage.trim() || isSending}
+              size="icon" 
+              className="shrink-0 h-12 w-12 rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 disabled:pointer-events-none"
+            >
               <Send className="w-5 h-5 text-primary-foreground ml-1" />
             </Button>
-          </div>
+          </form>
           <p className="text-[10px] text-center text-muted-foreground mt-3 font-medium">
             Ao enviar, o robô de IA é <span className="text-primary">pausado automaticamente</span>.
           </p>

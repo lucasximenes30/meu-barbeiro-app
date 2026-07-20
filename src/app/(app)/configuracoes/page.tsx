@@ -120,8 +120,6 @@ function ConfiguracoesContent() {
     { id: 'perfil', label: 'Informações Gerais', icon: User, desc: 'Dados da barbearia' },
     { id: 'horarios', label: 'Horários', icon: Clock, desc: 'Expediente e dias letivos' },
     { id: 'chat-publico', label: 'Chat Público', icon: Globe, desc: 'Link e QR Code' },
-    { id: 'automacoes', label: 'Automações', icon: Bot, desc: 'Regras e mensagens auto' },
-    { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle, desc: 'Conexão QR Code' },
     { id: 'notificacoes', label: 'Notificações', icon: BellRing, desc: 'Avisos e Web Push' },
     { id: 'aplicativo', label: 'Aplicativo', icon: Smartphone, desc: 'Instalar no celular' },
     { id: 'plano', label: 'Meu Plano', icon: Zap, desc: 'Assinatura e Faturamento' },
@@ -389,104 +387,7 @@ function ConfiguracoesContent() {
             </div>
           )}
 
-          {activeTab === 'automacoes' && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardHeader>
-                  <CardTitle className="text-white">Automações</CardTitle>
-                  <CardDescription>
-                    Configure regras automáticas para facilitar a gestão da sua barbearia.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
-                      <div className="space-y-1">
-                        <p className="font-medium text-white">Lembrete 2h antes</p>
-                        <p className="text-sm text-zinc-400">Envia mensagem no WhatsApp do cliente lembrando do horário.</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          defaultChecked 
-                          onChange={(e) => saveAutomations({ reminder24h: e.target.checked })} 
-                        />
-                        <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
 
-                    <div className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
-                      <div className="space-y-1">
-                        <p className="font-medium text-white">Pesquisa de Satisfação</p>
-                        <p className="text-sm text-zinc-400">Pede avaliação 1h após a finalização do corte.</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          defaultChecked 
-                          onChange={(e) => saveAutomations({ satisfaction: e.target.checked })} 
-                        />
-                        <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-zinc-950 border border-zinc-800 rounded-xl">
-                      <div className="space-y-1">
-                        <p className="font-medium text-white">Retorno (30 dias)</p>
-                        <p className="text-sm text-zinc-400">Convida o cliente para cortar novamente após 30 dias sumido.</p>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input 
-                          type="checkbox" 
-                          className="sr-only peer" 
-                          onChange={(e) => saveAutomations({ return30d: e.target.checked })} 
-                        />
-                        <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                      </label>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'whatsapp' && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-              <Card className="bg-zinc-900 border-zinc-800 overflow-hidden relative">
-                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                  <MessageCircle className="w-48 h-48" />
-                </div>
-                <CardHeader>
-                  <CardTitle className="text-white">Automação de WhatsApp</CardTitle>
-                  <CardDescription>
-                    Lembre seus clientes automaticamente 2h antes do corte.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-12 space-y-6 text-center max-w-md mx-auto relative z-10">
-                    <div className="w-20 h-20 rounded-3xl bg-secondary/20 flex items-center justify-center text-muted-foreground border border-zinc-800 shadow-xl">
-                      <MessageCircle className="w-10 h-10" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-2xl text-white">Pronto para conectar</h3>
-                      <p className="text-zinc-400 mt-2">
-                        Gere o QR Code e escaneie com o WhatsApp do seu estabelecimento (Aparelhos Conectados).
-                      </p>
-                    </div>
-                    <Button size="lg" className="w-full font-bold h-12 gap-2 mt-4">
-                      <MessageCircle className="w-5 h-5" />
-                      Gerar QR Code de Conexão
-                    </Button>
-                    <p className="text-xs text-zinc-500 font-medium">
-                      Requer internet ativa no celular principal.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
 
           {activeTab === 'aplicativo' && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-300">
