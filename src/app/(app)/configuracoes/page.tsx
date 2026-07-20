@@ -443,7 +443,7 @@ function ConfiguracoesContent() {
                               }
                               
                               if (perm === 'granted') {
-                                const registration = await navigator.serviceWorker.getRegistration();
+                                const registration = await navigator.serviceWorker.ready;
                                 
                                 if (registration) {
                                   toast.info('A notificação chegará em 3 segundos. Minimize o app no seu iPhone para ver o banner!', { duration: 4000 });
