@@ -453,7 +453,7 @@ function ConfiguracoesContent() {
                                       body: 'Seu teste funcionou! As notificações estão ativas e prontas.',
                                       icon: '/icon-192x192.png',
                                       vibrate: [200, 100, 200]
-                                    }).catch(e => console.error('Erro notificação:', e));
+                                    } as any).catch(e => console.error('Erro notificação:', e));
                                   }, 3000);
                                 } else {
                                   toast.error('Sistema ainda não está pronto. Recarregue o aplicativo e tente novamente.');
