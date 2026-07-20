@@ -431,29 +431,41 @@ function ConfiguracoesContent() {
                         <Button 
                           variant="outline" 
                           onClick={async () => {
-                            if (!('Notification' in window)) {
-                              toast.error('Seu navegador não suporta notificações.');
-                              return;
-                            }
-                            
-                            let perm = Notification.permission;
-                            if (perm !== 'granted') {
-                              perm = await Notification.requestPermission();
-                            }
-                            
-                            if (perm === 'granted') {
-                              navigator.serviceWorker.ready.then(function(registration) {
-                                registration.showNotification('Meu Barbeiro App', {
-                                  body: 'Esta é uma notificação de teste. Se você recebeu esta mensagem, as notificações estão funcionando corretamente.',
-                                  icon: '/icon-192x192.png',
-                                  vibrate: [200, 100, 200]
-                                } as any);
-                                toast.success('Notificação enviada!');
-                              });
-                            } else {
-                              toast.warning('Notificações bloqueadas.', {
-                                description: 'Para reativar, clique no cadeado ao lado da URL ou instale o aplicativo na sua tela de início.'
-                              });
+                            try {
+                              if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+                                toast.error('Seu dispositivo não suporta notificações web.');
+                                return;
+                              }
+                              
+                              let perm = Notification.permission;
+                              if (perm !== 'granted') {
+                                perm = await Notification.requestPermission();
+                              }
+                              
+                              if (perm === 'granted') {
+                                const registration = await navigator.serviceWorker.getRegistration();
+                                
+                                if (registration) {
+                                  toast.info('A notificação chegará em 3 segundos. Minimize o app no seu iPhone para ver o banner!', { duration: 4000 });
+                                  
+                                  setTimeout(() => {
+                                    registration.showNotification('Meu Barbeiro App', {
+                                      body: 'Seu teste funcionou! As notificações estão ativas e prontas.',
+                                      icon: '/icon-192x192.png',
+                                      vibrate: [200, 100, 200]
+                                    }).catch(e => console.error('Erro notificação:', e));
+                                  }, 3000);
+                                } else {
+                                  toast.error('Sistema ainda não está pronto. Recarregue o aplicativo e tente novamente.');
+                                }
+                              } else {
+                                toast.warning('Notificações bloqueadas.', {
+                                  description: 'Vá nos Ajustes do seu celular e permita as notificações para este aplicativo.'
+                                });
+                              }
+                            } catch (error) {
+                              console.error(error);
+                              toast.error('Erro ao testar notificações.');
                             }
                           }}
                           className="w-full sm:w-auto border-zinc-700 text-zinc-300 hover:text-white"
