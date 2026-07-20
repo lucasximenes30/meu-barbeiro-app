@@ -17,6 +17,7 @@ import { Zap, MessageCircle, User, Clock, ChevronRight, Settings, BellRing, Smar
 import { usePWA } from '@/hooks/usePWA';
 import { saveAutomations, getAutomations } from '@/app/actions/automations';
 import { getPublicChatSettings, savePublicChatSettings } from '@/app/actions/publicChat';
+import { getBarbershopProfile, updateBarbershopProfile } from '@/app/actions/settings';
 import QRCode from 'react-qr-code';
 import { toast } from 'sonner';
 
@@ -92,21 +93,31 @@ function ConfiguracoesContent() {
   }, [fetchSettings]);
 
   useEffect(() => {
-    if (settings && formData.nome === '') {
-      setFormData(prev => ({
-        ...prev,
-        nome: settings.nome,
-        telefone: settings.telefone,
-        endereco: settings.endereco,
-      }));
+    if (activeTab === 'perfil') {
+      getBarbershopProfile().then(res => {
+        if (res.success && res.data) {
+          setFormData({
+            nome: res.data.name || '',
+            telefone: res.data.phone || '',
+            endereco: res.data.address || ''
+          });
+        }
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings]);
+  }, [activeTab]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateSettings(formData);
-    toast.success('Configurações atualizadas com sucesso!');
+    const res = await updateBarbershopProfile({ 
+      name: formData.nome, 
+      phone: formData.telefone, 
+      address: formData.endereco 
+    });
+    if (res.success) {
+      toast.success('Configurações atualizadas com sucesso!');
+    } else {
+      toast.error('Erro ao salvar as configurações.');
+    }
   };
 
   const onTabChange = (value: string) => {
@@ -161,7 +172,7 @@ function ConfiguracoesContent() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar Menu */}
         <aside className="w-full md:w-72 shrink-0">
-          <nav className="flex flex-row md:flex-col gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0 w-full snap-x snap-mandatory touch-pan-x">
+          <nav className="flex flex-col gap-2 w-full">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -170,7 +181,7 @@ function ConfiguracoesContent() {
                 <button
                   key={item.id}
                   onClick={() => onTabChange(item.id)}
-                  className={`flex items-center gap-4 p-3 rounded-xl transition-all text-left min-w-[200px] md:min-w-0 shrink-0 snap-start ${
+                  className={`flex items-center gap-4 p-3 rounded-xl transition-all text-left w-full ${
                     isActive 
                       ? 'bg-zinc-900 border border-zinc-800 shadow-sm' 
                       : 'hover:bg-zinc-900/50 text-zinc-500 hover:text-zinc-300'
