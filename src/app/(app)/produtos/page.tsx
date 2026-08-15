@@ -4,6 +4,7 @@ import { useProductsStore } from '@/store/useProductsStore';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/EmptyState';
+import { ImageUploader } from '@/components/ui/image-uploader';
 import { Plus, Pencil, Trash2, Search, AlertCircle, PackageOpen, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,6 +26,7 @@ export default function ProdutosPage() {
     nome: '',
     descricao: '',
     imagemUrl: '',
+    imagePublicId: '',
     preco: '' as any,
     categoria: '',
     estoque: '' as any,
@@ -45,12 +47,13 @@ export default function ProdutosPage() {
         nome: produto.nome || '',
         descricao: produto.descricao || '',
         imagemUrl: produto.imagemUrl || '',
+        imagePublicId: produto.imagePublicId || '',
         preco: produto.preco || '',
         categoria: produto.categoria || '',
         estoque: produto.estoque || ''
       });
     } else {
-      setFormData({ id: '', nome: '', descricao: '', imagemUrl: '', preco: '' as any, categoria: '', estoque: '' as any });
+      setFormData({ id: '', nome: '', descricao: '', imagemUrl: '', imagePublicId: '', preco: '' as any, categoria: '', estoque: '' as any });
     }
     setIsDialogOpen(true);
   };
@@ -193,32 +196,17 @@ export default function ProdutosPage() {
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="imagemFile" className="text-muted-foreground ml-1">Foto do Produto (Galeria/Câmera)</Label>
-              <Input
-                id="imagemFile"
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      setFormData({ ...formData, imagemUrl: reader.result as string });
-                    };
-                    reader.readAsDataURL(file);
-                  }
+              <Label className="text-muted-foreground ml-1">Foto do Produto</Label>
+              <ImageUploader 
+                defaultImage={formData.imagemUrl}
+                folder="meu-barbeiro/products"
+                onUploadSuccess={(url, publicId) => {
+                  setFormData({ ...formData, imagemUrl: url, imagePublicId: publicId });
                 }}
-                className="h-12 rounded-xl bg-secondary/30 border-white/10 file:bg-primary file:text-primary-foreground file:border-0 file:rounded-lg file:px-4 file:py-1 file:mr-3 file:h-full file:cursor-pointer cursor-pointer text-muted-foreground"
+                onRemove={() => {
+                  setFormData({ ...formData, imagemUrl: '', imagePublicId: '' });
+                }}
               />
-              {/* Image Preview */}
-              {formData.imagemUrl && (
-                <div className="flex items-center gap-3 mt-1">
-                  <div className="w-12 h-12 rounded-lg overflow-hidden border border-white/10 shrink-0">
-                    <img src={formData.imagemUrl} alt="Preview" className="w-full h-full object-cover" />
-                  </div>
-                  <span className="text-xs text-green-500 font-medium">Foto anexada!</span>
-                </div>
-              )}
             </div>
             
             <div className="grid grid-cols-2 gap-4">

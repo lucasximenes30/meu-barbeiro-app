@@ -6,6 +6,7 @@ export interface Product {
   categoria: string;
   estoque: number;
   imagemUrl?: string;
+  imagePublicId?: string;
 }
 
 export interface Appointment {
@@ -31,6 +32,8 @@ export interface Service {
   nome: string;
   duracaoMinutos: number;
   preco: number;
+  imagemUrl?: string;
+  imagePublicId?: string;
 }
 
 export interface Transaction {

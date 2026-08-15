@@ -28,7 +28,8 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
           preco: Number(p.price),
           categoria: 'Geral', // Not in Prisma yet
           estoque: p.stock,
-          imagemUrl: p.imageUrl || undefined
+          imagemUrl: p.imageUrl || undefined,
+          imagePublicId: p.imagePublicId || undefined
         }));
         set({ products: mapped });
       }
@@ -46,6 +47,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
         name: data.nome,
         description: data.descricao,
         imageUrl: data.imagemUrl,
+        imagePublicId: data.imagePublicId,
         price: data.preco,
         stock: data.estoque
       };
@@ -71,6 +73,7 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
       if (data.nome) payload.name = data.nome;
       if (data.descricao !== undefined) payload.description = data.descricao;
       if (data.imagemUrl !== undefined) payload.imageUrl = data.imagemUrl;
+      if (data.imagePublicId !== undefined) payload.imagePublicId = data.imagePublicId;
       if (data.preco !== undefined) payload.price = data.preco;
       if (data.estoque !== undefined) payload.stock = data.estoque;
       

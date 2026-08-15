@@ -25,7 +25,9 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
           id: s.id,
           nome: s.name,
           duracaoMinutos: s.duration,
-          preco: Number(s.price)
+          preco: Number(s.price),
+          imagemUrl: s.imageUrl || undefined,
+          imagePublicId: s.imagePublicId || undefined
         }));
         set({ services: mapped });
       }
@@ -42,7 +44,9 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       const payload = {
         name: data.nome,
         duration: data.duracaoMinutos,
-        price: data.preco
+        price: data.preco,
+        imageUrl: data.imagemUrl,
+        imagePublicId: data.imagePublicId
       };
       const res = await fetch('/api/services', {
         method: 'POST',
@@ -66,6 +70,8 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
       if (data.nome) payload.name = data.nome;
       if (data.duracaoMinutos) payload.duration = data.duracaoMinutos;
       if (data.preco !== undefined) payload.price = data.preco;
+      if (data.imagemUrl !== undefined) payload.imageUrl = data.imagemUrl;
+      if (data.imagePublicId !== undefined) payload.imagePublicId = data.imagePublicId;
       
       const res = await fetch(`/api/services/${id}`, {
         method: 'PATCH',

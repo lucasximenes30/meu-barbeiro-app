@@ -3,6 +3,7 @@
 import { useServicesStore } from '@/store/useServicesStore';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ImageUploader } from '@/components/ui/image-uploader';
 import { Plus, Pencil, Trash2, Scissors, Clock, Settings2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,6 +21,8 @@ export default function ServicosPage() {
   const [formData, setFormData] = useState({
     id: '',
     nome: '',
+    imagemUrl: '',
+    imagePublicId: '',
     duracaoMinutos: '' as any,
     preco: '' as any,
   });
@@ -30,9 +33,16 @@ export default function ServicosPage() {
 
   const handleOpenDialog = (servico?: any) => {
     if (servico) {
-      setFormData(servico);
+      setFormData({
+        id: servico.id || '',
+        nome: servico.nome || '',
+        imagemUrl: servico.imagemUrl || '',
+        imagePublicId: servico.imagePublicId || '',
+        duracaoMinutos: servico.duracaoMinutos || '',
+        preco: servico.preco || ''
+      });
     } else {
-      setFormData({ id: '', nome: '', duracaoMinutos: '' as any, preco: '' as any });
+      setFormData({ id: '', nome: '', imagemUrl: '', imagePublicId: '', duracaoMinutos: '' as any, preco: '' as any });
     }
     setIsDialogOpen(true);
   };
@@ -85,9 +95,15 @@ export default function ServicosPage() {
           services.map((s) => (
             <div key={s.id} className="p-4 rounded-3xl bg-secondary/20 border border-white/5 relative group">
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                  <Scissors className="w-6 h-6" />
-                </div>
+                {s.imagemUrl ? (
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 border border-white/10 bg-secondary/30">
+                    <img src={s.imagemUrl} alt={s.nome} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-primary/20 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                    <Scissors className="w-8 h-8" />
+                  </div>
+                )}
                 
                 <div className="flex-1">
                   <h4 className="font-bold text-lg leading-tight">{s.nome}</h4>
@@ -134,6 +150,21 @@ export default function ServicosPage() {
                 placeholder="Ex: Corte Degradê"
               />
             </div>
+            
+            <div className="grid gap-2">
+              <Label className="text-muted-foreground ml-1">Foto do Serviço (Opcional)</Label>
+              <ImageUploader 
+                defaultImage={formData.imagemUrl}
+                folder="meu-barbeiro/services"
+                onUploadSuccess={(url, publicId) => {
+                  setFormData({ ...formData, imagemUrl: url, imagePublicId: publicId });
+                }}
+                onRemove={() => {
+                  setFormData({ ...formData, imagemUrl: '', imagePublicId: '' });
+                }}
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="duracao" className="text-muted-foreground ml-1">Duração (min)</Label>

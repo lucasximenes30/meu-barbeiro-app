@@ -87,6 +87,8 @@ model Service {
   barbershop   Barbershop @relation(fields: [barbershopId], references: [id], onDelete: Cascade)
   name         String
   description  String?
+  imageUrl     String?    // Image URL for the service/haircut
+  imagePublicId String?   // Cloudinary public ID for deletion
   price        Decimal    @db.Decimal(10, 2)
   duration     Int        // Duration in minutes
   isActive     Boolean    @default(true)
@@ -132,6 +134,7 @@ model Product {
   name         String
   description  String?
   imageUrl     String?    // Image URL for the product
+  imagePublicId String?   // Cloudinary public ID for deletion
   price        Decimal    @db.Decimal(10, 2)
   stock        Int        @default(0)
   isActive     Boolean    @default(true)
