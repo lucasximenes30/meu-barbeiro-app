@@ -17,6 +17,7 @@ export interface Appointment {
   hora: string;
   status: 'confirmado' | 'concluido' | 'cancelado' | 'nao_compareceu';
   observacoes?: string;
+  payments?: { method: string; amount: number }[];
 }
 
 export interface Client {

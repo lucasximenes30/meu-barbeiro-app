@@ -113,6 +113,7 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       
       if (data.status) payload.status = mapStatusToBackend(data.status);
       if (data.observacoes !== undefined) payload.notes = data.observacoes;
+      if (data.payments) payload.payments = data.payments;
       
       const res = await fetch(`/api/appointments/${id}`, {
         method: 'PATCH',

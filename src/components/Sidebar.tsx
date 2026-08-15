@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, Calendar, MessageCircle, Scissors, ShoppingBag, Settings, LogOut, DollarSign } from 'lucide-react';
+import { LayoutGrid, Calendar, MessageCircle, Scissors, ShoppingBag, Settings, LogOut, DollarSign, BarChart2 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 
@@ -51,6 +51,7 @@ export function Sidebar() {
     { name: 'Serviços', href: '/servicos', icon: Scissors },
     { name: 'Produtos', href: '/produtos', icon: ShoppingBag },
     { name: 'Financeiro', href: '/financeiro', icon: DollarSign },
+    { name: 'Relatórios', href: '/relatorios', icon: BarChart2 },
     { name: 'Configurações', href: '/configuracoes', icon: Settings },
   ];
 

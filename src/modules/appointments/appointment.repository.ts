@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { Appointment, Prisma } from '@prisma/client';
+import { Appointment, Prisma, PaymentMethod } from '@prisma/client';
 
 export class AppointmentRepository {
   async findAll(barbershopId: string): Promise<Appointment[]> {
@@ -29,4 +29,55 @@ export class AppointmentRepository {
       data: { deletedAt: new Date(), status: 'CANCELED' } 
     });
   }
+
+  async finalize(id: string, payments: { method: PaymentMethod; amount: number }[]): Promise<Appointment> {
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: { service: true }
+    });
+
+    if (!appointment) throw new Error('Appointment not found');
+
+    const totalServicePrice = Number(appointment.service.price);
+    const totalPayments = payments.reduce((acc, p) => acc + p.amount, 0);
+
+    if (Math.abs(totalServicePrice - totalPayments) > 0.01) {
+      throw new Error(`Total payments (${totalPayments}) do not match service price (${totalServicePrice})`);
+    }
+
+    // Usar uma transação para garantir que tudo seja salvo em conjunto
+    return prisma.$transaction(async (tx) => {
+      // 1. Atualizar agendamento para concluído
+      const updated = await tx.appointment.update({
+        where: { id },
+        data: { status: 'COMPLETED' }
+      });
+
+      // 2. Criar os registros de Payment
+      for (const p of payments) {
+        await tx.payment.create({
+          data: {
+            barbershopId: appointment.barbershopId,
+            appointmentId: appointment.id,
+            amount: p.amount,
+            method: p.method
+          }
+        });
+      }
+
+      // 3. Criar a transação financeira única com o valor total
+      await tx.financialTransaction.create({
+        data: {
+          barbershopId: appointment.barbershopId,
+          type: 'INCOME',
+          amount: totalServicePrice,
+          description: `Atendimento Finalizado: ${appointment.service.name}`,
+          appointmentId: appointment.id
+        }
+      });
+
+      return updated;
+    });
+  }
 }
+

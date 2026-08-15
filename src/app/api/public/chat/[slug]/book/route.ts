@@ -84,18 +84,7 @@ export async function POST(
       }
     });
 
-    // Registar a transação financeira do serviço
-    await prisma.financialTransaction.create({
-      data: {
-        barbershopId,
-        type: 'INCOME',
-        amount: service.price,
-        description: `Agendamento: ${service.name}`,
-        date,
-        appointmentId: appointment.id
-      }
-    });
-
+    // Transação financeira será criada apenas na finalização do atendimento
     // Se comprou um produto (Order Bump)
     if (productId) {
       const product = await prisma.product.findUnique({ where: { id: productId }});
@@ -110,17 +99,8 @@ export async function POST(
           }
         });
 
-        // Registar a transação financeira do produto
-        await prisma.financialTransaction.create({
-          data: {
-            barbershopId,
-            type: 'INCOME',
-            amount: product.price,
-            description: `Venda de Produto: ${product.name}`,
-            date, // Use the appointment date so they align
-            saleId: sale.id
-          }
-        });
+        // Transação financeira do produto será criada na finalização (se aplicável futuramente)
+
       }
     }
 

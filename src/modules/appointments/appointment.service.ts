@@ -23,4 +23,9 @@ export class AppointmentService {
   async delete(id: string) {
     return this.repository.delete(id);
   }
+
+  async finalize(id: string, payments: { method: any; amount: number }[]) {
+    return this.repository.finalize(id, payments);
+  }
 }
+

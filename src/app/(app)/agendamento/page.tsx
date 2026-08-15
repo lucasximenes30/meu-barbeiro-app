@@ -6,7 +6,7 @@ import { useAppointmentsStore } from '@/store/useAppointmentsStore';
 import { useClientsStore } from '@/store/useClientsStore';
 import { useServicesStore } from '@/store/useServicesStore';
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, HelpCircle, Unlock, Settings, XCircle, MessageCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, HelpCircle, Unlock, Settings, XCircle, MessageCircle, Plus, Trash2 } from 'lucide-react';
 import { format, addDays, subDays, startOfWeek, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import {
@@ -29,6 +29,11 @@ export default function AgendamentoPage() {
   const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
   const [slotToBook, setSlotToBook] = useState<string | null>(null);
   const [formData, setFormData] = useState({ clienteId: '', servicoId: '' });
+  
+  const [isCheckout, setIsCheckout] = useState(false);
+  const [isSplitPayment, setIsSplitPayment] = useState(false);
+  const [payments, setPayments] = useState<{ method: string; amount: number }[]>([{ method: 'PIX', amount: 0 }]);
+  const [encaixeHora, setEncaixeHora] = useState('12:00');
 
   const handlePrevMonth = () => setSelectedDate(prev => subMonths(prev, 1));
   const handleNextMonth = () => setSelectedDate(prev => addMonths(prev, 1));
@@ -132,20 +137,35 @@ export default function AgendamentoPage() {
         {/* Circle Grid */}
         <div className="grid grid-cols-4 gap-y-6 gap-x-2">
           {timeSlots.map((time, i) => {
-            const appt = agendamentosDoDia.find(a => a.hora === time);
+            const apptsInSlot = agendamentosDoDia.filter(a => {
+              const [h, m] = a.hora.split(':').map(Number);
+              const [slotH, slotM] = time.split(':').map(Number);
+              const timeMinutes = h * 60 + m;
+              const slotMinutes = slotH * 60 + slotM;
+              return timeMinutes >= slotMinutes && timeMinutes < slotMinutes + 30;
+            }).sort((a, b) => a.hora.localeCompare(b.hora));
             
             // In the future this should check the barber's configuration for blocked times (e.g. lunch)
             const isBlocked = false;
             
             return (
               <div key={i} className="flex flex-col items-center gap-2 relative">
-                {appt ? (
-                  // Scheduled
-                  <div 
-                    onClick={() => setSelectedAppointment(appt)}
-                    className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shadow-lg cursor-pointer hover:scale-105 transition-transform ${appt.status === 'concluido' ? 'bg-secondary text-foreground' : 'bg-primary text-primary-foreground'}`}
-                  >
-                    {getInitials(clients.find(c => c.id === appt.clienteId)?.nome || 'CL')}
+                {apptsInSlot.length > 0 ? (
+                  // Scheduled (one or more)
+                  <div className="flex flex-col gap-3 items-center">
+                    {apptsInSlot.map(appt => (
+                      <div key={appt.id} className="flex flex-col items-center relative group">
+                        <div 
+                          onClick={() => setSelectedAppointment(appt)}
+                          className={`w-14 h-14 rounded-full flex items-center justify-center text-lg font-bold shadow-lg cursor-pointer hover:scale-105 transition-transform ${appt.status === 'concluido' ? 'bg-secondary text-foreground' : 'bg-primary text-primary-foreground'}`}
+                        >
+                          {getInitials(clients.find(c => c.id === appt.clienteId)?.nome || 'CL')}
+                        </div>
+                        <div className="flex flex-col items-center mt-1">
+                          <span className={`text-xs font-bold text-foreground`}>{appt.hora}</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : isBlocked ? (
                   // Blocked
@@ -154,18 +174,16 @@ export default function AgendamentoPage() {
                   </div>
                 ) : (
                   // Available
-                  <div 
-                    onClick={() => setSlotToBook(time)}
-                    className="w-14 h-14 rounded-full bg-transparent border border-white/10 flex items-center justify-center text-muted-foreground cursor-pointer hover:bg-white/5 transition-colors"
-                  >
-                    <Unlock className="w-4 h-4 opacity-50" />
+                  <div className="flex flex-col items-center">
+                    <div 
+                      onClick={() => setSlotToBook(time)}
+                      className="w-14 h-14 rounded-full bg-transparent border border-white/10 flex items-center justify-center text-muted-foreground cursor-pointer hover:bg-white/5 transition-colors"
+                    >
+                      <Unlock className="w-4 h-4 opacity-50" />
+                    </div>
+                    <span className={`text-xs font-bold text-muted-foreground mt-1`}>{time}</span>
                   </div>
                 )}
-                
-                <div className="flex flex-col items-center">
-                  <span className={`text-xs font-bold ${appt ? 'text-foreground' : 'text-muted-foreground'}`}>{time}</span>
-                  {appt && <span className="text-[9px] text-muted-foreground">{time}</span> /* Duplicated time as per design */}
-                </div>
               </div>
             );
           })}
@@ -218,13 +236,20 @@ export default function AgendamentoPage() {
       </Dialog>
 
       {/* Appointment Details Modal */}
-      <Dialog open={!!selectedAppointment} onOpenChange={(open) => !open && setSelectedAppointment(null)}>
-        <DialogContent className="max-w-sm rounded-3xl glass-card p-6">
+      <Dialog open={!!selectedAppointment} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedAppointment(null);
+          setIsCheckout(false);
+          setIsSplitPayment(false);
+          setPayments([{ method: 'PIX', amount: 0 }]);
+        }
+      }}>
+        <DialogContent className="max-w-sm rounded-3xl glass-card p-6 max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
-            <DialogTitle className="text-xl">Detalhes do Agendamento</DialogTitle>
+            <DialogTitle className="text-xl">{isCheckout ? 'Finalizar Atendimento' : 'Detalhes do Agendamento'}</DialogTitle>
           </DialogHeader>
           
-          {selectedAppointment && (
+          {selectedAppointment && !isCheckout && (
             <div className="space-y-6 mt-2">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shrink-0">
@@ -295,12 +320,151 @@ export default function AgendamentoPage() {
                 >
                   Cancelar
                 </button>
-                <button className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:scale-[1.02] transition-transform text-sm">
-                  Iniciar Corte
-                </button>
+                {selectedAppointment.status !== 'concluido' && (
+                  <button 
+                    onClick={() => {
+                      const servicePrice = Number(services.find(s => s.id === selectedAppointment.servicoId)?.preco || 0);
+                      setPayments([{ method: 'PIX', amount: servicePrice }]);
+                      setIsCheckout(true);
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:scale-[1.02] transition-transform text-sm"
+                  >
+                    Finalizar
+                  </button>
+                )}
               </div>
             </div>
           )}
+
+          {selectedAppointment && isCheckout && (() => {
+            const servicePrice = Number(services.find(s => s.id === selectedAppointment.servicoId)?.preco || 0);
+            const totalPayments = payments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+            const diff = servicePrice - totalPayments;
+            const canSubmit = Math.abs(diff) < 0.01;
+
+            return (
+              <div className="space-y-6 mt-2 animate-in fade-in zoom-in duration-300">
+                <div className="bg-secondary/30 rounded-2xl p-4 border border-white/5 flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Valor Total</span>
+                  <span className="font-bold text-primary text-xl">
+                    R$ {servicePrice.toFixed(2).replace('.', ',')}
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 rounded-md accent-primary"
+                      checked={isSplitPayment}
+                      onChange={(e) => {
+                        setIsSplitPayment(e.target.checked);
+                        if (!e.target.checked) {
+                          setPayments([{ method: payments[0]?.method || 'PIX', amount: servicePrice }]);
+                        }
+                      }}
+                    />
+                    <span className="text-sm font-bold text-foreground">Dividir pagamento</span>
+                  </label>
+
+                  <div className="space-y-3">
+                    {payments.map((p, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <select 
+                          className="flex-1 h-12 rounded-xl bg-secondary/30 border-white/10 px-3 text-sm text-foreground focus:ring-primary focus:border-primary"
+                          value={p.method}
+                          onChange={(e) => {
+                            const newP = [...payments];
+                            newP[index].method = e.target.value;
+                            setPayments(newP);
+                          }}
+                        >
+                          <option value="PIX" className="bg-background">PIX</option>
+                          <option value="CASH" className="bg-background">Dinheiro</option>
+                          <option value="CREDIT_CARD" className="bg-background">Cartão de Crédito</option>
+                          <option value="DEBIT_CARD" className="bg-background">Cartão de Débito</option>
+                          <option value="OTHER" className="bg-background">Outro</option>
+                        </select>
+
+                        <div className="relative w-32 shrink-0">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                          <input 
+                            type="text"
+                            inputMode="numeric"
+                            disabled={!isSplitPayment}
+                            className="w-full h-12 rounded-xl bg-secondary/30 border-white/10 pl-8 pr-3 text-sm text-foreground focus:ring-primary focus:border-primary disabled:opacity-50"
+                            value={p.amount === 0 ? '' : p.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            onChange={(e) => {
+                              const rawValue = e.target.value.replace(/\D/g, '');
+                              const numberValue = Number(rawValue) / 100;
+                              const newP = [...payments];
+                              newP[index].amount = numberValue;
+                              setPayments(newP);
+                            }}
+                            placeholder="0,00"
+                          />
+                        </div>
+
+                        {isSplitPayment && payments.length > 1 && (
+                          <button 
+                            onClick={() => setPayments(payments.filter((_, i) => i !== index))}
+                            className="w-12 h-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500/20 transition-colors shrink-0"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {isSplitPayment && (
+                    <button 
+                      onClick={() => setPayments([...payments, { method: 'PIX', amount: 0 }])}
+                      className="w-full py-3 rounded-xl border border-dashed border-white/20 text-muted-foreground text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/5 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Adicionar forma de pagamento
+                    </button>
+                  )}
+
+                  {/* Resumo */}
+                  {isSplitPayment && (
+                    <div className={`p-4 rounded-xl text-center text-sm font-bold ${canSubmit ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+                      {diff > 0.01 && `Faltam R$ ${diff.toFixed(2).replace('.', ',')}`}
+                      {diff < -0.01 && `Valor excede em R$ ${Math.abs(diff).toFixed(2).replace('.', ',')}`}
+                      {canSubmit && `✓ Pagamento completo`}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 pt-4">
+                  <button 
+                    onClick={() => setIsCheckout(false)}
+                    className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 font-bold transition-colors text-sm"
+                  >
+                    Voltar
+                  </button>
+                  <button 
+                    disabled={!canSubmit || isLoadingAppointments}
+                    onClick={async () => {
+                      if (!canSubmit) return;
+                      await useAppointmentsStore.getState().updateAppointment(selectedAppointment.id, { 
+                        status: 'concluido',
+                        payments
+                      });
+                      toast.success('Atendimento finalizado com sucesso!');
+                      setSelectedAppointment(null);
+                      setIsCheckout(false);
+                      setIsSplitPayment(false);
+                    }}
+                    className="flex-[2] py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:scale-[1.02] transition-transform text-sm disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    {isLoadingAppointments ? 'Processando...' : 'Confirmar Pagamento'}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 
@@ -313,20 +477,22 @@ export default function AgendamentoPage() {
       }}>
         <DialogContent className="max-w-sm rounded-3xl glass-card p-6">
           <DialogHeader>
-            <DialogTitle className="text-xl">Novo Agendamento</DialogTitle>
+            <DialogTitle className="text-xl">{slotToBook === 'encaixe' ? 'Novo Encaixe' : 'Novo Agendamento'}</DialogTitle>
             <DialogDescription>
-              Marcando horário para {format(selectedDate, 'dd/MM/yyyy')} às {slotToBook}
+              Marcando horário para {format(selectedDate, 'dd/MM/yyyy')} {slotToBook !== 'encaixe' && `às ${slotToBook}`}
             </DialogDescription>
           </DialogHeader>
           
           <form className="space-y-4 mt-2" onSubmit={async (e) => {
             e.preventDefault();
-            if (slotToBook && formData.clienteId && formData.servicoId) {
+            const finalTime = slotToBook === 'encaixe' ? encaixeHora : slotToBook;
+            
+            if (finalTime && formData.clienteId && formData.servicoId) {
               await addAppointment({
                 clienteId: formData.clienteId,
                 servicoId: formData.servicoId,
                 data: format(selectedDate, 'yyyy-MM-dd'),
-                hora: slotToBook,
+                hora: finalTime,
                 status: 'confirmado'
               });
               toast.success('Agendamento confirmado com sucesso!');
@@ -334,6 +500,19 @@ export default function AgendamentoPage() {
               setFormData({ clienteId: '', servicoId: '' });
             }
           }}>
+            {slotToBook === 'encaixe' && (
+              <div className="grid gap-2">
+                <Label className="text-muted-foreground ml-1">Horário</Label>
+                <input 
+                  type="time" 
+                  required
+                  className="h-12 w-full rounded-xl bg-secondary/30 border-white/10 px-3 text-sm text-foreground focus:ring-primary focus:border-primary"
+                  value={encaixeHora}
+                  onChange={e => setEncaixeHora(e.target.value)}
+                />
+              </div>
+            )}
+            
             <div className="grid gap-2">
               <Label className="text-muted-foreground ml-1">Cliente</Label>
               <select 
@@ -383,6 +562,14 @@ export default function AgendamentoPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* FAB Encaixe */}
+      <button 
+        onClick={() => setSlotToBook('encaixe')}
+        className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_0_20px_var(--color-primary)] flex items-center justify-center hover:scale-110 transition-transform z-40"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
 
     </div>
   );

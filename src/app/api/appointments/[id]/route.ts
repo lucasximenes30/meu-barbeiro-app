@@ -32,11 +32,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     const body = await req.json();
     const id = (await params).id;
-    const patched = await service.update(id, body);
+    let patched;
+
+    if (body.status === 'COMPLETED' && body.payments && Array.isArray(body.payments)) {
+      patched = await service.finalize(id, body.payments);
+    } else {
+      const updateData = { ...body };
+      delete updateData.payments; // Prevent invalid fields in Prisma update
+      patched = await service.update(id, updateData);
+    }
     
     // Se foi cancelado, remover a transação financeira para não contar na receita
     if (body.status === 'CANCELED') {
       await prisma.financialTransaction.deleteMany({
+        where: { appointmentId: id }
+      });
+      await prisma.payment.deleteMany({
         where: { appointmentId: id }
       });
     }
