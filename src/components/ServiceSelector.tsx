@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 interface ServiceSelectorProps {
-  services: { id: string; name: string; price: number; duration: number }[];
+  services: { id: string; name: string; price: number; duration: number; imageUrl?: string | null }[];
   onSelect: (serviceName: string) => void;
 }
 
@@ -24,9 +24,13 @@ export function ServiceSelector({ services, onSelect }: ServiceSelectorProps) {
             }`}
           >
             <div className="h-32 bg-zinc-800 w-full relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center">
-                <span className="text-zinc-500 font-medium text-[10px] uppercase tracking-widest">{service.name}</span>
-              </div>
+              {service.imageUrl ? (
+                <img src={service.imageUrl} alt={service.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-zinc-700 to-zinc-900 flex items-center justify-center">
+                  <span className="text-zinc-500 font-medium text-[10px] uppercase tracking-widest text-center px-2">{service.name}</span>
+                </div>
+              )}
             </div>
             <div className="bg-zinc-900/90 p-3 backdrop-blur-md">
               <h4 className="font-bold text-white text-sm uppercase truncate">{service.name}</h4>

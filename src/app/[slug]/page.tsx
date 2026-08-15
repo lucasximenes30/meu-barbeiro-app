@@ -34,7 +34,8 @@ export default async function PublicChatPage({
           id: true,
           name: true,
           price: true,
-          duration: true
+          duration: true,
+          imageUrl: true
         }
       },
       products: {
@@ -42,7 +43,8 @@ export default async function PublicChatPage({
         select: {
           id: true,
           name: true,
-          price: true
+          price: true,
+          imageUrl: true
         }
       },
       phone: true
@@ -65,11 +67,13 @@ export default async function PublicChatPage({
       name: s.name,
       price: Number(s.price),
       duration: s.duration,
+      imageUrl: s.imageUrl,
     })),
     products: barbershop.products.map(p => ({
       id: p.id,
       name: p.name,
       price: Number(p.price),
+      imageUrl: p.imageUrl,
     })),
   };
 

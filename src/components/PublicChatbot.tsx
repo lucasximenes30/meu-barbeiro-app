@@ -16,8 +16,8 @@ interface PublicChatbotProps {
     phone: string | null;
     logoUrl: string | null;
     welcomeMessage: string;
-    services?: { id: string; name: string; price: number; duration: number }[];
-    products?: { id: string; name: string; price: number }[];
+    services?: { id: string; name: string; price: number; duration: number; imageUrl?: string | null }[];
+    products?: { id: string; name: string; price: number; imageUrl?: string | null }[];
   };
 }
 
