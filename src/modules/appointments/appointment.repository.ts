@@ -79,5 +79,38 @@ export class AppointmentRepository {
       return updated;
     });
   }
+
+  async swap(idA: string, idB: string, barbershopId: string): Promise<void> {
+    return prisma.$transaction(async (tx) => {
+      const apptA = await tx.appointment.findFirst({ where: { id: idA, barbershopId, deletedAt: null } });
+      const apptB = await tx.appointment.findFirst({ where: { id: idB, barbershopId, deletedAt: null } });
+
+      if (!apptA || !apptB) {
+        throw new Error('Um ou ambos os agendamentos não foram encontrados.');
+      }
+      
+      if (apptA.status !== 'PENDING' && apptA.status !== 'CONFIRMED') {
+         throw new Error(`O agendamento não pode ser substituído pois está com status ${apptA.status}`);
+      }
+      if (apptB.status !== 'PENDING' && apptB.status !== 'CONFIRMED') {
+         throw new Error(`O agendamento não pode ser substituído pois está com status ${apptB.status}`);
+      }
+
+      const dateA = apptA.date;
+      const dateB = apptB.date;
+      const userIdA = apptA.userId;
+      const userIdB = apptB.userId;
+
+      await tx.appointment.update({
+        where: { id: idA },
+        data: { date: dateB, userId: userIdB }
+      });
+
+      await tx.appointment.update({
+        where: { id: idB },
+        data: { date: dateA, userId: userIdA }
+      });
+    });
+  }
 }
 

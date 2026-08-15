@@ -20,7 +20,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 export default function AgendamentoPage() {
-  const { appointments, fetchAppointments, isLoading: isLoadingAppointments, addAppointment } = useAppointmentsStore();
+  const { appointments, fetchAppointments, isLoading: isLoadingAppointments, addAppointment, swapAppointments } = useAppointmentsStore();
   const { clients, fetchClients } = useClientsStore();
   const { services, fetchServices } = useServicesStore();
   
@@ -34,6 +34,9 @@ export default function AgendamentoPage() {
   const [isSplitPayment, setIsSplitPayment] = useState(false);
   const [payments, setPayments] = useState<{ method: string; amount: number }[]>([{ method: 'PIX', amount: 0 }]);
   const [encaixeHora, setEncaixeHora] = useState('12:00');
+  
+  const [isSwapping, setIsSwapping] = useState(false);
+  const [swapTarget, setSwapTarget] = useState<any>(null);
 
   const handlePrevMonth = () => setSelectedDate(prev => subMonths(prev, 1));
   const handleNextMonth = () => setSelectedDate(prev => addMonths(prev, 1));
@@ -242,14 +245,18 @@ export default function AgendamentoPage() {
           setIsCheckout(false);
           setIsSplitPayment(false);
           setPayments([{ method: 'PIX', amount: 0 }]);
+          setIsSwapping(false);
+          setSwapTarget(null);
         }
       }}>
         <DialogContent className="max-w-sm rounded-3xl glass-card p-6 max-h-[90vh] overflow-y-auto scrollbar-hide">
           <DialogHeader>
-            <DialogTitle className="text-xl">{isCheckout ? 'Finalizar Atendimento' : 'Detalhes do Agendamento'}</DialogTitle>
+            <DialogTitle className="text-xl">
+              {isCheckout ? 'Finalizar Atendimento' : isSwapping ? 'Substituir Horário' : 'Detalhes do Agendamento'}
+            </DialogTitle>
           </DialogHeader>
           
-          {selectedAppointment && !isCheckout && (
+          {selectedAppointment && !isCheckout && !isSwapping && (
             <div className="space-y-6 mt-2">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl shrink-0">
@@ -320,6 +327,14 @@ export default function AgendamentoPage() {
                 >
                   Cancelar
                 </button>
+                {selectedAppointment.status !== 'concluido' && selectedAppointment.status !== 'cancelado' && (
+                  <button 
+                    onClick={() => setIsSwapping(true)}
+                    className="flex-1 py-3 rounded-xl bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 font-bold transition-colors text-sm"
+                  >
+                    Substituir
+                  </button>
+                )}
                 {selectedAppointment.status !== 'concluido' && (
                   <button 
                     onClick={() => {
@@ -335,6 +350,114 @@ export default function AgendamentoPage() {
               </div>
             </div>
           )}
+
+          {selectedAppointment && isSwapping && (() => {
+            const elegiveis = appointments.filter(a => 
+              a.id !== selectedAppointment.id && 
+              a.status !== 'cancelado' && 
+              a.status !== 'concluido'
+            ).sort((a, b) => a.data.localeCompare(b.data) || a.hora.localeCompare(b.hora));
+
+            return (
+              <div className="space-y-6 mt-2 animate-in fade-in zoom-in duration-300">
+                <div className="bg-secondary/30 rounded-2xl p-4 border border-white/5 space-y-2">
+                  <span className="text-muted-foreground text-xs font-bold uppercase tracking-wider">Agendamento Atual</span>
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-foreground">
+                      {clients.find(c => c.id === selectedAppointment.clienteId)?.nome}
+                    </span>
+                    <span className="text-primary font-bold">
+                      {format(new Date(selectedAppointment.data + 'T12:00:00'), 'dd/MM')} às {selectedAppointment.hora}
+                    </span>
+                  </div>
+                </div>
+
+                {!swapTarget ? (
+                  <div className="space-y-3">
+                    <Label className="text-sm font-bold ml-1">Escolha o horário/agendamento para trocar</Label>
+                    <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                      {elegiveis.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">Nenhum agendamento disponível para substituição.</p>
+                      )}
+                      {elegiveis.map(a => (
+                        <div 
+                          key={a.id}
+                          onClick={() => setSwapTarget(a)}
+                          className="p-3 rounded-xl border border-white/10 hover:border-primary hover:bg-white/5 cursor-pointer transition-colors flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="font-bold text-sm">{clients.find(c => c.id === a.clienteId)?.nome}</p>
+                            <p className="text-xs text-muted-foreground">{services.find(s => s.id === a.servicoId)?.nome}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm text-foreground">{format(new Date(a.data + 'T12:00:00'), 'dd/MM')}</p>
+                            <p className="text-xs font-bold text-primary">{a.hora}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="bg-primary/10 border border-primary/20 rounded-2xl p-4 flex flex-col gap-3">
+                      <span className="text-primary text-xs font-bold uppercase tracking-wider">Prévia da troca</span>
+                      
+                      <div className="flex flex-col gap-1">
+                        <span className="font-bold text-sm">{clients.find(c => c.id === selectedAppointment.clienteId)?.nome}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground line-through">{format(new Date(selectedAppointment.data + 'T12:00:00'), 'dd/MM')} às {selectedAppointment.hora}</span>
+                          <span className="text-foreground">→</span>
+                          <span className="font-bold text-primary">{format(new Date(swapTarget.data + 'T12:00:00'), 'dd/MM')} às {swapTarget.hora}</span>
+                        </div>
+                      </div>
+
+                      <div className="h-[1px] w-full bg-white/10"></div>
+
+                      <div className="flex flex-col gap-1">
+                        <span className="font-bold text-sm">{clients.find(c => c.id === swapTarget.clienteId)?.nome}</span>
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground line-through">{format(new Date(swapTarget.data + 'T12:00:00'), 'dd/MM')} às {swapTarget.hora}</span>
+                          <span className="text-foreground">→</span>
+                          <span className="font-bold text-primary">{format(new Date(selectedAppointment.data + 'T12:00:00'), 'dd/MM')} às {selectedAppointment.hora}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <button 
+                    onClick={() => {
+                      if (swapTarget) setSwapTarget(null);
+                      else setIsSwapping(false);
+                    }}
+                    className="flex-1 py-3 rounded-xl bg-white/5 hover:bg-white/10 font-bold transition-colors text-sm"
+                  >
+                    {swapTarget ? 'Voltar' : 'Cancelar'}
+                  </button>
+                  {swapTarget && (
+                    <button 
+                      disabled={isLoadingAppointments}
+                      onClick={async () => {
+                        try {
+                          await swapAppointments(selectedAppointment.id, swapTarget.id);
+                          toast.success('Horários substituídos com sucesso.');
+                          setSelectedAppointment(null);
+                          setIsSwapping(false);
+                          setSwapTarget(null);
+                        } catch (error: any) {
+                          toast.error(error.message || 'Erro ao substituir horários.');
+                        }
+                      }}
+                      className="flex-[2] py-3 rounded-xl bg-primary text-primary-foreground font-bold hover:scale-[1.02] transition-transform text-sm disabled:opacity-50"
+                    >
+                      {isLoadingAppointments ? 'Processando...' : 'Confirmar substituição'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {selectedAppointment && isCheckout && (() => {
             const servicePrice = Number(services.find(s => s.id === selectedAppointment.servicoId)?.preco || 0);

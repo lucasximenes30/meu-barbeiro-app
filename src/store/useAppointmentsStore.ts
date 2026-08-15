@@ -8,6 +8,7 @@ interface AppointmentsState {
   addAppointment: (appointment: Omit<Appointment, 'id'>) => Promise<void>;
   updateAppointment: (id: string, appointment: Partial<Appointment>) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
+  swapAppointments: (idA: string, idB: string) => Promise<void>;
 }
 
 const mapStatusToFrontend = (status: string): Appointment['status'] => {
@@ -141,6 +142,28 @@ export const useAppointmentsStore = create<AppointmentsState>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to delete appointment', error);
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  swapAppointments: async (idA, idB) => {
+    set({ isLoading: true });
+    try {
+      const res = await fetch('/api/appointments/swap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idA, idB })
+      });
+      if (res.ok) {
+        await get().fetchAppointments();
+      } else {
+        const err = await res.json();
+        throw new Error(err.error || 'Não foi possível substituir os horários. A agenda pode ter sido alterada por outro usuário.');
+      }
+    } catch (error) {
+      console.error('Failed to swap appointments', error);
+      throw error;
     } finally {
       set({ isLoading: false });
     }

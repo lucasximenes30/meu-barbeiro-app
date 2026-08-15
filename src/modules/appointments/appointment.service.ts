@@ -27,5 +27,9 @@ export class AppointmentService {
   async finalize(id: string, payments: { method: any; amount: number }[]) {
     return this.repository.finalize(id, payments);
   }
+
+  async swap(idA: string, idB: string, barbershopId: string) {
+    return this.repository.swap(idA, idB, barbershopId);
+  }
 }
 
